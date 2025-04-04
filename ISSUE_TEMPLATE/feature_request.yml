@@ -1,0 +1,14 @@
+name: Feature Request
+description: Suggest a feature or enhancement
+title: "[Feature] "
+labels: [enhancement, roadmap]
+body:
+  - type: textarea
+    id: overview
+    attributes:
+      label: What would you like to see?
+  - type: textarea
+    id: value
+    attributes:
+      label: Why is it useful?
+
