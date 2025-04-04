@@ -30,6 +30,11 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           PORT: ${{ secrets.PORT }}
 
-      - name: 🚀 Deploy to Railway (CLI or script)
-        run: echo "🛠️ Hook your Railway CLI deploy step here"
+      - name: ⚙️ Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: 🚀 Deploy to Railway
+        run: railway up --project a3600ddc-e9c5-45d3-a4d0-8b633698b2fe --service backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
 
