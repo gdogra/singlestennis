@@ -1,12 +1,28 @@
-# React + Vite
+# SinglesTennis 🎾
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![Backend Deploy](https://github.com/gdogra/singlestennis/actions/workflows/deploy-backend.yml/badge.svg)](https://github.com/gdogra/singlestennis/actions)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/2bfc4511-d30a-4d87-bdf8-e9e5f43c621b/deploy-status)](https://app.netlify.com/sites/tennisconnect2/deploys)
 
-Currently, two official plugins are available:
+**SinglesTennis** is a full-stack tennis challenge and match tracking platform. Built to help players connect, challenge, and compete with ease.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## 🛠 Tech Stack
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| Layer       | Tech                                |
+|-------------|--------------------------------------|
+| Frontend    | React + Vite + TailwindCSS          |
+| Backend     | Node.js + Express + PostgreSQL      |
+| Auth        | JWT + Bcrypt                        |
+| DevOps      | GitHub Actions + Docker             |
+| Deployments | Railway (backend), Netlify (frontend) |
+
+---
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/gdogra/singlestennis.git
+cd singlestennis
+docker-compose up --build
+
