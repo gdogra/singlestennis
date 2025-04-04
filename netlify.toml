@@ -1,0 +1,8 @@
+[build]
+  base = "frontend"
+  publish = "frontend/dist"
+  command = "npm run build"
+
+[context.production.environment]
+  VITE_API_BASE_URL = "https://singlestennis-production.up.railway.app"
+
