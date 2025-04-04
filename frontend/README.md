@@ -1,28 +1,39 @@
-# SinglesTennis 🎾
+# 📍 SinglesTennis Roadmap
 
-[![Backend Deploy](https://github.com/gdogra/singlestennis/actions/workflows/deploy-backend.yml/badge.svg)](https://github.com/gdogra/singlestennis/actions)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/2bfc4511-d30a-4d87-bdf8-e9e5f43c621b/deploy-status)](https://app.netlify.com/sites/tennisconnect2/deploys)
-
-**SinglesTennis** is a full-stack tennis challenge and match tracking platform. Built to help players connect, challenge, and compete with ease.
+This document mirrors the [GitHub Project board](https://github.com/users/gdogra/projects/3/views/1) and outlines upcoming features and improvements for the app.
 
 ---
 
-## 🛠 Tech Stack
+## ✅ Completed
 
-| Layer       | Tech                                |
-|-------------|--------------------------------------|
-| Frontend    | React + Vite + TailwindCSS          |
-| Backend     | Node.js + Express + PostgreSQL      |
-| Auth        | JWT + Bcrypt                        |
-| DevOps      | GitHub Actions + Docker             |
-| Deployments | Railway (backend), Netlify (frontend) |
+- User authentication (JWT)
+- Challenge scheduling and match tracking
+- Match result input with score update
+- Leaderboards and player stats
+- CI/CD via GitHub Actions + Railway + Netlify
+- Dockerized dev environment
 
 ---
 
-## 🚀 Quick Start
+## 🚧 In Progress
 
-```bash
-git clone https://github.com/gdogra/singlestennis.git
-cd singlestennis
-docker-compose up --build
+- 🏅 Skill-Based Matchmaking
+- 🔍 Player Search + Filters
+- 🕹️ Admin Panel for User + Match Management
+- 🖼️ Profile Pictures + Hover Cards
+
+---
+
+## 🔮 Planned
+
+- 🌐 Google OAuth login
+- 🧠 AI-based challenge suggestions
+- 📨 Email Notifications
+- 🕰️ Time Zone-Aware Scheduling
+- 📅 Google Calendar Integration
+- 📦 PWA Support (offline mode)
+
+---
+
+✅ For live progress, visit the [Roadmap Board on GitHub Projects](https://github.com/users/gdogra/projects/3/views/1)
 
