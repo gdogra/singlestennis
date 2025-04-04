@@ -1,29 +1,35 @@
-name: Deploy Backend to Railway
+name: 🚀 Deploy Backend to Railway
 
 on:
   push:
-    paths:
-      - "backend/**"
-      - ".github/workflows/deploy-backend.yml"
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout code
+      - name: ⬇️ Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🔧 Set up Node.js
+      - name: 🟢 Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: 🚀 Trigger Railway deploy
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}" \
-            https://backboard.railway.app/project/${{ secrets.RAILWAY_PROJECT_ID }}/deploy
+      - name: 📦 Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: ✅ Validate backend environment variables
+        run: node scripts/validate-env.js
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_SSL: ${{ secrets.DB_SSL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          PORT: ${{ secrets.PORT }}
+
+      - name: 🚀 Deploy to Railway (CLI or script)
+        run: echo "🛠️ Hook your Railway CLI deploy step here"
 
