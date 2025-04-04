@@ -1,0 +1,15 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    [
+      "semantic-release-monorepo",
+      {
+        "packages": [
+          "frontend",
+          "backend"
+        ]
+      }
+    ]
+  ]
+}
+
