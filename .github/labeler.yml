@@ -1,0 +1,24 @@
+bug:
+  - '**/ISSUE_TEMPLATE/bug_report.yml'
+  - 'README.md'
+  - '**/*error*'
+  - '**/*fail*'
+
+enhancement:
+  - '**/ISSUE_TEMPLATE/feature_request.yml'
+  - '**/feature/**'
+  - '**/routes/**'
+  - '**/components/**'
+
+roadmap:
+  - 'ROADMAP.md'
+  - '**/ISSUE_TEMPLATE/**'
+  - '**/projects/**'
+  - '**/views/**'
+
+frontend:
+  - 'frontend/**'
+
+backend:
+  - 'backend/**'
+
