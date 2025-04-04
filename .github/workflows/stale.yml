@@ -1,0 +1,24 @@
+name: 🔁 Auto-Close Stale Issues and PRs
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Runs daily at 2am UTC
+  workflow_dispatch:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: >
+            👋 This issue has been automatically marked as stale due to 30 days of inactivity.
+            It will be closed in 7 days if no further updates are made.
+          stale-pr-message: >
+            🔁 This PR has been inactive for 30 days. If no updates occur, it will be closed in 7 days.
+          stale-issue-label: stale
+          stale-pr-label: stale
+          days-before-stale: 30
+          days-before-close: 7
+
