@@ -1,10 +1,20 @@
 [build]
   base = "frontend"
   publish = "frontend/dist"
-  command = "npm run validate-env && npm run build"
+  command = "rm -f postcss.config.js && npm run build"
 
-[dev]
-  framework = "vite"
-  targetPort = 5173
-  autoLaunch = true
+[build.environment]
+  VITE_API_BASE_URL = "https://singlestennis-production.up.railway.app"
+  NODE_ENV = "production"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://tennisconnect-backend.railway.app/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
