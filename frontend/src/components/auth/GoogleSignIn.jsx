@@ -4,33 +4,32 @@ import { jwtDecode } from 'jwt-decode';
 import api from '../../utils/api';
 
 const GoogleSignIn = ({ onSuccess }) => {
-  const handleSuccess = async (credentialResponse) => {
+  const handleLoginSuccess = async (credentialResponse) => {
     try {
       const decoded = jwtDecode(credentialResponse.credential);
-      const { email, name, picture, sub: googleId } = decoded;
+      const { email, given_name: firstName, family_name: lastName } = decoded;
 
-      const res = await api.post('/auth/google', {
+      const response = await api.post('/auth/google', {
         email,
-        name,
-        avatar: picture,
-        googleId,
+        firstName,
+        lastName,
       });
 
-      const { token } = res.data;
+      const { token } = response.data;
       localStorage.setItem('token', token);
-      onSuccess();
+
+      if (onSuccess) onSuccess();
     } catch (err) {
-      console.error('Google sign-in failed:', err);
+      console.error('Google login failed', err);
     }
   };
 
-  const handleError = () => {
-    console.error('Google Sign In was unsuccessful. Try again later.');
-  };
-
   return (
-    <div className="flex justify-center">
-      <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
+    <div>
+      <GoogleLogin
+        onSuccess={handleLoginSuccess}
+        onError={() => console.error('Login Failed')}
+      />
     </div>
   );
 };
