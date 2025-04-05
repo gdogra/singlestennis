@@ -1,35 +1,41 @@
-import React, { useEffect } from 'react';
+import React from 'react'; // ✅ This line is essential for Netlify/Vite to process JSX
+import { useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import api from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
-const GoogleSignIn = ({ onSuccess }) => {
-  const handleLoginSuccess = async (credentialResponse) => {
+const GoogleSignIn = () => {
+  const { login } = useAuth();
+
+  const handleSuccess = async (credentialResponse) => {
     try {
       const decoded = jwtDecode(credentialResponse.credential);
-      const { email, given_name: firstName, family_name: lastName } = decoded;
+      const { email, name, picture } = decoded;
 
       const response = await api.post('/auth/google', {
         email,
-        firstName,
-        lastName,
+        name,
+        picture,
       });
 
-      const { token } = response.data;
-      localStorage.setItem('token', token);
-
-      if (onSuccess) onSuccess();
+      if (response.status === 200) {
+        login(response.data.token, response.data.user);
+      } else {
+        console.error('Login failed:', response.data);
+      }
     } catch (err) {
-      console.error('Google login failed', err);
+      console.error('Google sign-in error:', err);
     }
   };
 
+  const handleFailure = () => {
+    console.error('Google sign-in was unsuccessful');
+  };
+
   return (
-    <div>
-      <GoogleLogin
-        onSuccess={handleLoginSuccess}
-        onError={() => console.error('Login Failed')}
-      />
+    <div className="flex justify-center mt-8">
+      <GoogleLogin onSuccess={handleSuccess} onError={handleFailure} />
     </div>
   );
 };
