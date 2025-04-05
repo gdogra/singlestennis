@@ -1,7 +1,7 @@
 [build]
 base = "frontend"
 publish = "frontend/dist"
-command = "rm -f postcss.config.js && npm run build"
+command = "rm -f /opt/build/repo/frontend/postcss.config.js && npm run build"
 
 [build.environment]
 NODE_VERSION = "18"
