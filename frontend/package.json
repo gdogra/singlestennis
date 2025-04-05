@@ -9,6 +9,7 @@
     "validate-env": "node scripts/validate-env.js"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.12.1",
     "axios": "^1.8.4",
     "chart.js": "^4.4.8",
     "framer-motion": "^12.6.3",
