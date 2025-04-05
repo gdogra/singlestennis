@@ -1,41 +1,25 @@
-// src/components/auth/GoogleSignIn.jsx
-
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode'; // ✅ Named import
+import { jwtDecode } from 'jwt-decode'; // ✅ Correct way to import with ESM
 import api from '../../utils/api';
 
-const GoogleSignIn = ({ onLogin }) => {
+const GoogleSignIn = ({ onSuccess }) => {
   const handleSuccess = async (credentialResponse) => {
     try {
-      const token = credentialResponse.credential;
-      const decoded = jwtDecode(token); // ✅ Updated usage
-      const { email, given_name: firstName, family_name: lastName, picture: avatar } = decoded;
-
-      // Send user info to your backend
+      const decoded = jwtDecode(credentialResponse.credential);
       const res = await api.post('/auth/google', {
-        email,
-        firstName,
-        lastName,
-        avatar,
-        token,
+        token: credentialResponse.credential,
+        profile: decoded,
       });
-
-      const { user, accessToken } = res.data;
-      localStorage.setItem('token', accessToken);
-      onLogin(user);
-    } catch (error) {
-      console.error('Google login failed', error);
+      if (onSuccess) onSuccess(res.data);
+    } catch (err) {
+      console.error('Google sign-in failed', err);
     }
   };
 
-  const handleError = () => {
-    console.error('Login Failed');
-  };
-
   return (
-    <div className="google-signin">
-      <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
+    <div className="google-signin-wrapper">
+      <GoogleLogin onSuccess={handleSuccess} onError={() => console.log('Login Failed')} />
     </div>
   );
 };
