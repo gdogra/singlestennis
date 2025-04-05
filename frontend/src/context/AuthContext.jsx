@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState } from 'react';
 
 export const AuthContext = createContext();
 
@@ -9,18 +9,14 @@ const AuthProvider = ({ children }) => {
   });
 
   const login = (userData) => {
-    setAuthData(userData);
     localStorage.setItem('user', JSON.stringify(userData));
+    setAuthData(userData);
   };
 
   const logout = () => {
-    setAuthData(null);
     localStorage.removeItem('user');
+    setAuthData(null);
   };
-
-  useEffect(() => {
-    // optionally refresh or validate session here
-  }, []);
 
   return (
     <AuthContext.Provider value={{ ...authData, login, logout }}>
