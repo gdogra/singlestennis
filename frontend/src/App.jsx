@@ -1,29 +1,33 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Login from './components/auth/Login';
-import Signup from './components/auth/Signup';
-import NotFound from './components/NotFound';
+import Dashboard from './components/Dashboard';
+import Login from './components/auth/Login.jsx';
+import Signup from './components/auth/Signup.jsx'; // ✅ Corrected import
 import AdminPanel from './components/admin/AdminPanel';
 import Profile from './components/Profile';
-import { AuthProvider } from './context/AuthContext';
-import Dashboard from './components/Dashboard';
+import NotFound from './components/NotFound.jsx';
+import { AuthContext } from './context/AuthContext';
 
 function App() {
+  const { user } = useContext(AuthContext);
+
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <div className="min-h-screen bg-gray-100">
         <Navbar />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+        <div className="container mx-auto px-4 py-6">
+          <Routes>
+            <Route path="/" element={user ? <Dashboard user={user} /> : <Navigate to="/login" />} />
+            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+            <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
+            <Route path="/admin" element={user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
+            <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </div>
+    </Router>
   );
 }
 
