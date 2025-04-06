@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -9,72 +10,62 @@ const Signup = () => {
     password: '',
   });
 
-  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
     try {
-      const response = await api.post('/register', formData);
-      if (response.status === 201) {
-        navigate('/login');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Signup failed');
+      const res = await api.post('/register', formData);
+      toast.success('Signup successful! Please log in.');
+      navigate('/login');
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Signup failed');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6">Sign Up</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">Sign Up</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700">Username</label>
-            <input
-              type="text"
-              name="username"
-              className="w-full px-4 py-2 border rounded-md"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700">Email</label>
-            <input
-              type="email"
-              name="email"
-              className="w-full px-4 py-2 border rounded-md"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700">Password</label>
-            <input
-              type="password"
-              name="password"
-              className="w-full px-4 py-2 border rounded-md"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            value={formData.username}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
           >
             Sign Up
           </button>
