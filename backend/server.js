@@ -1,57 +1,39 @@
-// backend/server.js
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+
 import authRoutes from './routes/auth.js';
-import playersRoutes from './routes/players.js';
 import dashboardRoutes from './routes/dashboard.js';
 import challengesRoutes from './routes/challenges.js';
-import adminRoutes from './routes/admin.js';
+import playersRoutes from './routes/players.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
 
-// ✅ Define allowed origins
-const allowedOrigins = [
-  'https://singlestennis.netlify.app',
-  'http://localhost:3000',
-  'http://localhost:65480'
-];
-
-// ✅ CORS configuration
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS blocked: ${origin}`));
-      }
-    },
-    credentials: true
-  })
-);
-
-// Middleware
-app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://singlestennis.netlify.app'],
+  credentials: true,
+}));
 app.use(morgan('dev'));
+app.use(express.json());
 
-// Routes
+// Route mounting
 app.use('/auth', authRoutes);
-app.use('/players', playersRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/challenges', challengesRoutes);
-app.use('/admin', adminRoutes);
+app.use('/players', playersRoutes);
 
-// Healthcheck
-app.get('/', (req, res) => {
-  res.send('🎾 TennisConnect backend is running!');
+// Health check
+app.get('/', (req, res) => res.send('🎾 TennisConnect API is live'));
+
+// 404 fallback
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
-// Start server
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

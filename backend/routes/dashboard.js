@@ -1,23 +1,42 @@
 import express from 'express';
-import pool from '../db/index.js';
-import verifyToken from '../middleware/authMiddleware.js';
+import { pool } from '../db/index.js';
+import { verifyToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Get dashboard data (example: rankings, match stats, etc.)
-router.get('/player-rankings', verifyToken, async (req, res) => {
+// Middleware to verify token for all dashboard routes
+router.use(verifyToken);
+
+// Get dashboard summary for a user
+router.get('/:id', async (req, res) => {
+  const userId = req.params.id;
+
   try {
-    const result = await pool.query(
-      'SELECT id, name, skill_level, avatar_url FROM users ORDER BY skill_level DESC'
+    const upcomingMatches = await pool.query(
+      `SELECT COUNT(*) FROM matches WHERE (player1_id = $1 OR player2_id = $1) AND status = 'scheduled'`,
+      [userId]
     );
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching player rankings:', err);
-    res.status(500).json({ error: 'Failed to fetch rankings' });
+
+    const completedMatches = await pool.query(
+      `SELECT COUNT(*) FROM matches WHERE (player1_id = $1 OR player2_id = $1) AND status = 'completed'`,
+      [userId]
+    );
+
+    const pendingChallenges = await pool.query(
+      `SELECT COUNT(*) FROM challenges WHERE receiver_id = $1 AND status = 'pending'`,
+      [userId]
+    );
+
+    res.json({
+      upcoming: Number(upcomingMatches.rows[0].count),
+      completed: Number(completedMatches.rows[0].count),
+      pending: Number(pendingChallenges.rows[0].count),
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
   }
 });
-
-// Additional dashboard routes can be added here (match history, upcoming matches, etc.)
 
 export default router;
 
