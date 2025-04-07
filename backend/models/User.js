@@ -1,4 +1,5 @@
-import pool from '../db/index.js';
+// backend/models/User.js
+import { pool } from '../db/index.js'; // ✅ correct
 
 const User = {
   async getByEmail(email) {
