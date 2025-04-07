@@ -1,22 +1,24 @@
-/ src/App.jsx
 import React from 'react';
 import { useAuth } from './context/AuthContext';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard.jsx';
-import SignIn from './pages/SignIn.jsx';
-import SignUp from './pages/SignUp.jsx';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Signup from './pages/Signup';
 
-export default function App() {
+function App() {
   const { user } = useAuth();
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={user ? <Dashboard /> : <SignIn />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route
+        path="/"
+        element={user ? <Dashboard /> : <Navigate to="/login" />}
+      />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+    </Routes>
   );
 }
+
+export default App;
 
