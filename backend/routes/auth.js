@@ -2,17 +2,21 @@ import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/index.js';
+import models from '../models/index.js';
+
+const { User } = models;
 
 const router = express.Router();
 
+// Initialize Google OAuth client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Google Sign-in
+// Google Sign-in route
 router.post('/google', async (req, res) => {
   try {
     const { token, email, name } = req.body;
 
+    // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
@@ -24,6 +28,7 @@ router.post('/google', async (req, res) => {
       return res.status(400).json({ message: 'Email verification failed' });
     }
 
+    // Check if user already exists
     let user = await User.getByEmail(email);
 
     if (!user) {
@@ -38,6 +43,7 @@ router.post('/google', async (req, res) => {
       });
     }
 
+    // Generate JWT
     const jwtToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
