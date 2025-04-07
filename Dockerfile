@@ -1,20 +1,20 @@
 FROM node:20-alpine
 
-# Set container working directory
+# Set working directory
 WORKDIR /app
 
-# Copy backend code recursively into /app/backend/
-COPY backend backend
+# Copy the entire backend folder
+COPY backend/ ./backend/
 
 # Move into backend directory
 WORKDIR /app/backend
 
-# Install backend dependencies
+# Install only production deps
 RUN npm install --production
 
-# Expose port for Railway
+# Expose app port
 EXPOSE 8080
 
-# Run the server
+# Start server
 CMD ["node", "server.js"]
 
