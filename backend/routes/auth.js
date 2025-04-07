@@ -6,7 +6,6 @@ import { User } from '../models/index.js';
 
 const router = express.Router();
 
-// Initialize Google OAuth client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Google Sign-in
@@ -14,7 +13,6 @@ router.post('/google', async (req, res) => {
   try {
     const { token, email, name } = req.body;
 
-    // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
@@ -50,7 +48,7 @@ router.post('/google', async (req, res) => {
       message: 'Google authentication successful',
       user: {
         id: user.id,
-        username: user.username,
+        username: user.name,
         email: user.email,
         role: user.role
       },
