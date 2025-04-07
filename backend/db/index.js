@@ -7,5 +7,5 @@ const pool = new Pool({
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
-export default pool;
+export { pool }; // ✅ Named export
 
