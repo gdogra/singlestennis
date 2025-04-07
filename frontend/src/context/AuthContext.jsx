@@ -1,43 +1,24 @@
-// frontend/src/context/AuthContext.jsx
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// src/context/AuthContext.jsx
+import { createContext, useContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [authData, setAuthData] = useState({
-    token: null,
-    user: null,
-  });
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
-
-    if (token && user) {
-      setAuthData({ token, user });
-    }
+    // Optional: load user from localStorage or API
   }, []);
 
-  const login = (token, user) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-    setAuthData({ token, user });
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setAuthData({ token: null, user: null });
-  };
-
   return (
-    <AuthContext.Provider value={{ ...authData, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// ✅ This is what was missing:
-export const useAuth = () => useContext(AuthContext);
-
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  return context;
+};

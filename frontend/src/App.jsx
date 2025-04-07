@@ -1,33 +1,22 @@
-import React, { useContext } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Login from './components/auth/Login';
-import Signup from './components/auth/Signup';
-import Dashboard from './components/Dashboard';
-import AdminPanel from './components/admin/AdminPanel';
-import Navbar from './components/Navbar';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import RequireRole from './components/auth/RequireRole';
-import NotFound from './components/NotFound';
-import Profile from './components/Profile';
-import { AuthContext } from './context/AuthContext';
+/ src/App.jsx
+import React from 'react';
+import { useAuth } from './context/AuthContext';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Dashboard from './pages/Dashboard.jsx';
+import SignIn from './pages/SignIn.jsx';
+import SignUp from './pages/SignUp.jsx';
 
-function App() {
-  const { user } = useContext(AuthContext);
+export default function App() {
+  const { user } = useAuth();
 
   return (
-    <>
-      <Navbar />
+    <Router>
       <Routes>
-        <Route path="/" element={<Dashboard user={user} />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/admin" element={<RequireRole role="admin"><AdminPanel /></RequireRole>} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="/" element={user ? <Dashboard /> : <SignIn />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
       </Routes>
-    </>
+    </Router>
   );
 }
-
-export default App;
 
