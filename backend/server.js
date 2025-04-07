@@ -7,16 +7,25 @@ import playerRoutes from './routes/players.js';
 import dashboardRoutes from './routes/dashboard.js';
 import adminRoutes from './routes/admin.js';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 8080;
 
-// Middleware
+// ✅ Allow CORS from localhost and Netlify
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://singlestennis.netlify.app'
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true
+  })
+);
+
 app.use(express.json());
-app.use(cors({
-  origin: ['http://localhost:5173', 'https://singlestennis.netlify.app'],
-}));
 
 // Routes
 app.use('/auth', authRoutes);
@@ -24,13 +33,10 @@ app.use('/players', playerRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/admin', adminRoutes);
 
-// Root Healthcheck endpoint for Railway
+// Healthcheck
 app.get('/', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'TennisConnect Backend Running 🚀' });
+  res.send('✅ Backend is running.');
 });
-
-// Start server
-const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
