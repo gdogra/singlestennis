@@ -2,6 +2,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
+
 import authRoutes from './routes/auth.js';
 import playerRoutes from './routes/players.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -12,7 +14,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// ✅ Updated CORS configuration
+// ✅ Updated CORS to allow Netlify + localhost
 const allowedOrigins = [
   'http://localhost:3000',
   'https://singlestennis.netlify.app'
@@ -31,16 +33,18 @@ app.use(
   })
 );
 
+app.use(bodyParser.json());
 app.use(express.json());
 
+// Routes
 app.use('/auth', authRoutes);
 app.use('/players', playerRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/admin', adminRoutes);
 
-// Healthcheck
+// Health check
 app.get('/', (req, res) => {
-  res.send('✅ Backend is running.');
+  res.send('Server is live!');
 });
 
 app.listen(PORT, () => {
