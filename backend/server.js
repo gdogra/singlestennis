@@ -1,39 +1,47 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import morgan from 'morgan';
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
+import challengesRoutes from './routes/challenges.js';
+import playersRoutes from './routes/players.js';
+import { verifyToken } from './middleware/authMiddleware.js';
+import pool from './db.js';
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 8080;
 
-// Allow both local and deployed frontend origins
+// ✅ Allow both local and Netlify frontends
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://singlestennis.netlify.app',
+  'https://singlestennis.netlify.app'
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(new Error(`CORS error: origin ${origin} not allowed`));
   },
-  credentials: true,
+  credentials: true
 }));
 
 app.use(express.json());
+app.use(morgan('dev'));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.get('/', (req, res) => res.send('TennisConnect backend is live!'));
 
-const PORT = process.env.PORT || 8080;
+app.use('/auth', authRoutes);
+app.use('/dashboard', verifyToken, dashboardRoutes);
+app.use('/challenges', verifyToken, challengesRoutes);
+app.use('/players', verifyToken, playersRoutes);
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
 
