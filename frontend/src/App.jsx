@@ -3,7 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Signup from './pages/Signup';
+import Signup from './pages/Signup.jsx';
 
 function App() {
   const { user } = useAuth();
