@@ -1,5 +1,5 @@
 // frontend/src/components/auth/GoogleSignIn.jsx
-
+import React from 'react';
 import { useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
