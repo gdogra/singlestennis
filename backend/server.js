@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// ✅ Allow CORS from localhost and Netlify
+// ✅ Updated CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
   'https://singlestennis.netlify.app'
@@ -20,14 +20,19 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true
   })
 );
 
 app.use(express.json());
 
-// Routes
 app.use('/auth', authRoutes);
 app.use('/players', playerRoutes);
 app.use('/dashboard', dashboardRoutes);
