@@ -1,5 +1,19 @@
 {
+  "name": "singlestennis-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "sync-env": "node scripts/sync-env.cjs",
+    "generate-env-schemas": "node scripts/generate-env-schema.cjs",
+    "validate-env-schema": "node scripts/validate-env-against-schema.cjs",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-path .gitignore",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
+  },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4"
+    "dotenv": "^16.4.5",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
   }
 }
+

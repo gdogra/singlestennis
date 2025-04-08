@@ -1,10 +1,12 @@
-// backend/scripts/validate-env.js
-const requiredVars = [
-  'DATABASE_URL',
-  'DB_SSL',
-  'JWT_SECRET',
-  'PORT'
-];
+// backend/scripts/validate-env.cjs
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+const envPath = path.resolve(__dirname, '..', '.env');
+dotenv.config({ path: envPath });
+
+const requiredVars = ['DATABASE_URL', 'DB_SSL', 'JWT_SECRET', 'PORT'];
 
 const missing = requiredVars.filter((key) => !process.env[key]);
 

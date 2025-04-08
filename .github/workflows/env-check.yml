@@ -1,0 +1,40 @@
+# .github/workflows/env-check.yml
+name: Check .env.example is up to date
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-env-example:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run env example generator
+        run: npm run generate-env-example
+
+      - name: Check for uncommitted changes
+        run: |
+          if [[ -n "$(git status --porcelain .env.example)" ]]; then
+            echo "❌ .env.example is out of date. Please run 'npm run generate-env-example' and commit the changes."
+            git diff .env.example
+            exit 1
+          fi
+

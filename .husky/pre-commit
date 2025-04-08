@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# Skip Husky in CI environments
+if [ "$CI" = "true" ]; then
+  echo "✅ Skipping pre-commit in CI"
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "🔄 Syncing .env files..."
+npm run sync-env
+
+echo "🧬 Regenerating env schemas..."
+npm run generate-env-schemas
+
+echo "📥 Auto-staging schema files..."
+git add .env.schema*.json
+
+echo "🔎 Re-checking for schema diffs..."
+if ! git diff --cached --quiet -- .env.schema*.json; then
+  echo "✅ Schema files updated — auto-committing..."
+  git commit -m "chore: auto-commit updated env schema files" --no-verify
+else
+  echo "✅ Schema files are up to date"
+fi
+
+echo "🎨 Running lint..."
+npm run lint
+
+echo "✅ Pre-commit checks complete"
+
