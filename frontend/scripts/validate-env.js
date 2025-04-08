@@ -1,24 +1,17 @@
-const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
+// frontend/scripts/validate-env.js
+const requiredVars = ['VITE_GOOGLE_CLIENT_ID'];
+let missing = false;
 
-const envPath =
-  process.env.NODE_ENV === 'production'
-    ? path.resolve(__dirname, '../.env.production')
-    : path.resolve(__dirname, '../.env');
+requiredVars.forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`❌ Missing env variable: ${key}`);
+    missing = true;
+  }
+});
 
-dotenv.config({ path: envPath });
-
-// Define required environment variables
-const requiredVars = ['VITE_API_BASE_URL'];
-
-const missing = requiredVars.filter((key) => !process.env[key]);
-
-if (missing.length > 0) {
-  console.error('❌ Missing required environment variables:');
-  missing.forEach((key) => console.error(key));
+if (missing) {
   process.exit(1);
+} else {
+  console.log('✅ Environment variables validated.');
 }
-
-console.log('✅ Environment variables validated.');
 

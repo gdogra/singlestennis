@@ -1,17 +1,17 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/login': 'http://localhost:8080',
-      '/register': 'http://localhost:8080',
-      '/dashboard': 'http://localhost:8080',
-      '/players': 'http://localhost:8080',
-      '/challenges': 'http://localhost:8080',
-      '/profile': 'http://localhost:8080',
-      '/admin': 'http://localhost:8080',
+      '/auth': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
