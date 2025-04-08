@@ -1,68 +1,66 @@
 import express from 'express';
-import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import models from '../models/index.js';
-
-const { User } = models;
+import pool from '../db.js';
+import { OAuth2Client } from 'google-auth-library';
 
 const router = express.Router();
 
-// Initialize Google OAuth client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const JWT_SECRET = process.env.JWT_SECRET || 'secret-key';
 
-// Google Sign-in route
-router.post('/google', async (req, res) => {
+// POST /login (email/password)
+router.post('/login', async (req, res) => {
   try {
-    const { token, email, name } = req.body;
+    const { email, password } = req.body;
 
-    // Verify the Google token
+    if (!email || !password) return res.status(400).json({ error: 'Missing credentials' });
+
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
+
+    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '2h' });
+
+    res.json({ token });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Server error during login' });
+  }
+});
+
+// POST /google-login (Google token exchange)
+router.post('/google-login', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ error: 'Missing Google credential' });
+
     const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
+    const email = payload?.email;
 
-    if (payload.email !== email) {
-      return res.status(400).json({ message: 'Email verification failed' });
+    let user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (!user.rows.length) {
+      const insertResult = await pool.query(
+        'INSERT INTO users (email, role) VALUES ($1, $2) RETURNING *',
+        [email, 'user']
+      );
+      user = insertResult;
     }
 
-    // Check if user already exists
-    let user = await User.getByEmail(email);
-
-    if (!user) {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-8), salt);
-
-      user = await User.create({
-        username: name,
-        email,
-        password: hashedPassword,
-        role: 'player'
-      });
-    }
-
-    // Generate JWT
-    const jwtToken = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-
-    res.json({
-      message: 'Google authentication successful',
-      user: {
-        id: user.id,
-        username: user.name,
-        email: user.email,
-        role: user.role
-      },
-      token: jwtToken
-    });
-  } catch (error) {
-    console.error('Google authentication error:', error);
-    res.status(500).json({ message: 'Server error' });
+    const token = jwt.sign({ id: user.rows[0].id, role: user.rows[0].role }, JWT_SECRET, { expiresIn: '2h' });
+    res.json({ token });
+  } catch (err) {
+    console.error('Google login error:', err);
+    res.status(500).json({ error: 'Server error during Google login' });
   }
 });
 
