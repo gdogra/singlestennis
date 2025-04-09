@@ -6,14 +6,16 @@
     "sync-env": "node scripts/sync-env.cjs",
     "generate-env-schemas": "node scripts/generate-env-schema.cjs",
     "validate-env-schema": "node scripts/validate-env-against-schema.cjs",
+    "generate-env-example": "node scripts/generate-env-example.cjs",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-path .gitignore",
-    "format": "prettier --check .",
-    "format:fix": "prettier --write ."
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.23.3",
+    "@babel/preset-react": "^7.22.15",
     "dotenv": "^16.4.5",
     "eslint": "^8.57.0",
-    "prettier": "^3.2.5"
+    "eslint-plugin-react": "^7.33.2"
   }
 }
 
