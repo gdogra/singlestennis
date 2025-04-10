@@ -1,20 +1,32 @@
 // backend/middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
 
-export function verifyToken(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1];
+export const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(403).json({ message: 'No token provided' });
   }
+
+  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach decoded user info to the request object
+    req.user = decoded;
     next();
   } catch (err) {
-    console.error('Token verification failed:', err);
-    res.status(403).json({ error: 'Invalid token' });
+    console.error('Token verification failed:', err.message);
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-}
+};
+
+export const requireRole = (role) => {
+  return (req, res, next) => {
+    if (req.user && req.user.role === role) {
+      next();
+    } else {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+  };
+};
 

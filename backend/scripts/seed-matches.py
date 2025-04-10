@@ -1,57 +1,46 @@
-import psycopg2
-import random
-from datetime import datetime, timedelta
+// backend/scripts/seed-matches.js
+import dotenv from 'dotenv';
+import { pool } from '../db/index.js';
 
-# Connect to your PostgreSQL database
-conn = psycopg2.connect(
-    dbname="postgres",
-    user="postgres",
-    password="pos_brthe_O2",
-    host="localhost",
-    port="5432"
-)
-cur = conn.cursor()
+dotenv.config();
 
-# Get all existing user IDs
-cur.execute("SELECT id FROM users")
-user_ids = [row[0] for row in cur.fetchall()]
+const seedMatches = async () => {
+  try {
+    console.log('🌱 Seeding matches...');
 
-def generate_score():
-    sets = []
-    player1_sets = 0
-    player2_sets = 0
+    // Get users
+    const { rows: users } = await pool.query('SELECT id, username FROM users');
+    if (users.length < 2) {
+      console.log('❌ Need at least two users to seed matches.');
+      process.exit(1);
+    }
 
-    while player1_sets < 2 and player2_sets < 2:
-        p1_games = random.randint(6, 7)
-        p2_games = random.randint(0, 5)
+    const player1 = users[0];
+    const player2 = users[1];
 
-        if p2_games == p1_games:
-            p2_games = p1_games - 1  # avoid tie
+    // Delete existing matches
+    await pool.query('DELETE FROM matches');
 
-        if p1_games > p2_games:
-            player1_sets += 1
-        else:
-            player2_sets += 1
+    // Seed sample matches
+    const now = new Date();
+    const pastDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 1 week ago
+    const futureDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
 
-        sets.append(f"{p1_games}-{p2_games}")
+    await pool.query(
+      `INSERT INTO matches (player_id, opponent_id, date, status, score) VALUES
+        ($1, $2, $3, 'completed', '6-3, 6-4'),
+        ($2, $1, $4, 'completed', '7-5, 4-6, 6-2'),
+        ($1, $2, $5, 'scheduled', NULL)`,
+      [player1.id, player2.id, pastDate, pastDate, futureDate]
+    );
 
-    return sets, 1 if player1_sets > player2_sets else 2
+    console.log(`✅ Seeded matches between ${player1.username} and ${player2.username}`);
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ Error seeding matches:', err);
+    process.exit(1);
+  }
+};
 
-# Seed 20 matches
-for _ in range(20):
-    p1, p2 = random.sample(user_ids, 2)
-    match_date = datetime.now() - timedelta(days=random.randint(0, 60))
-    sets, winner_flag = generate_score()
-    winner_id = p1 if winner_flag == 1 else p2
-    score = ", ".join(sets)
-
-    cur.execute("""
-        INSERT INTO matches (player1_id, player2_id, match_date, status, winner_id, score)
-        VALUES (%s, %s, %s, 'completed', %s, %s)
-    """, (p1, p2, match_date.date(), winner_id, score))
-
-conn.commit()
-cur.close()
-conn.close()
-print("✅ Seeded 20 matches successfully.")
+seedMatches();
 

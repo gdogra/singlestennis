@@ -1,84 +1,92 @@
-// src/components/MatchEditModal.jsx
-import React, { useState, useEffect } from "react";
-import Modal from "./Modal";
-import DateTimePicker from "react-datetime-picker";
-import { toast } from "react-toastify";
-import { updateMatchDetails } from "../api";
+// frontend/src/components/MatchEditModal.jsx
+import React, { useState, useEffect } from 'react';
+import { Dialog } from '@headlessui/react';
+import { toast } from 'react-toastify';
 
-const MatchEditModal = ({ isOpen, onClose, match, onSave }) => {
-  const [date, setDate] = useState(new Date());
-  const [location, setLocation] = useState("");
+const MatchEditModal = ({ isOpen, onClose, match, token, onSave }) => {
+  const [form, setForm] = useState({
+    status: '',
+    match_date: '',
+    winner_id: '',
+  });
 
   useEffect(() => {
     if (match) {
-      setDate(new Date(match.scheduled_at));
-      setLocation(match.location);
+      setForm({
+        status: match.status,
+        match_date: match.match_date?.split('T')[0] || '',
+        winner_id: match.winner_id || '',
+      });
     }
   }, [match]);
 
   const handleSave = async () => {
     try {
-      const updated = await updateMatchDetails(match.id, {
-        scheduled_at: date,
-        location,
+      const res = await fetch(`/api/admin/matches/${match.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
       });
-      toast.success("Match updated successfully!");
-      onSave(updated);
+
+      if (!res.ok) throw new Error('Update failed');
+      toast.success('Match updated');
+      onSave?.();
       onClose();
-    } catch (error) {
-      toast.error("Failed to update match.");
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+      toast.error('Error updating match');
     }
   };
 
+  if (!isOpen || !match) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="p-4 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Edit Match</h2>
-        <label className="block mb-2 text-sm">Date & Time:</label>
-        <DateTimePicker
-          onChange={setDate}
-          value={date}
-          className="mb-4 w-full"
-        />
+    <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 p-4 flex items-center justify-center">
+      <Dialog.Overlay className="fixed inset-0 bg-black/40" />
+      <div className="bg-white rounded-lg p-6 w-full max-w-md z-10 relative shadow-xl">
+        <Dialog.Title className="text-lg font-bold mb-4">Edit Match #{match.id}</Dialog.Title>
 
-        <label className="block mb-2 text-sm">Location:</label>
+        <label className="block mb-2 text-sm font-medium">Status</label>
+        <select
+          className="w-full p-2 border rounded mb-4"
+          value={form.status}
+          onChange={(e) => setForm({ ...form, status: e.target.value })}
+        >
+          <option value="scheduled">Scheduled</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+
+        <label className="block mb-2 text-sm font-medium">Match Date</label>
         <input
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          className="border rounded px-3 py-2 w-full mb-4"
+          type="date"
+          className="w-full p-2 border rounded mb-4"
+          value={form.match_date}
+          onChange={(e) => setForm({ ...form, match_date: e.target.value })}
         />
 
-        {location && (
-          <iframe
-            title="Google Maps Preview"
-            width="100%"
-            height="200"
-            className="rounded mb-4"
-            loading="lazy"
-            src={`https://maps.google.com/maps?q=${encodeURIComponent(
-              location
-            )}&output=embed`}
-          ></iframe>
-        )}
+        <label className="block mb-2 text-sm font-medium">Winner</label>
+        <select
+          className="w-full p-2 border rounded mb-4"
+          value={form.winner_id}
+          onChange={(e) => setForm({ ...form, winner_id: e.target.value })}
+        >
+          <option value="">None</option>
+          <option value={match.player1_id}>{match.player1_name}</option>
+          <option value={match.player2_id}>{match.player2_name}</option>
+        </select>
 
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          >
+        <div className="flex justify-end space-x-2">
+          <button onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
+          <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded">
             Save
           </button>
         </div>
       </div>
-    </Modal>
+    </Dialog>
   );
 };
 
