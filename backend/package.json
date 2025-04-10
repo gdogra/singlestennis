@@ -11,13 +11,16 @@
     "generate-env-example": "node scripts/generate-env-example.cjs"
   },
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.1",
-    "express": "^4.18.2",
-    "morgan": "^1.10.0"
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "google-auth-library": "^9.15.1",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "pg": "^8.14.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   }
 }
-

@@ -1,53 +1,88 @@
-// src/context/AuthContext.jsx
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
 
-  // Check localStorage on mount
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (token && userData) {
-      setUser(JSON.parse(userData));
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
     }
-  }, []);
 
-  const login = async (email, password) => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) return false;
-
-      const data = await res.json();
-      setUser(data.user);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      return true;
-    } catch (err) {
-      console.error('Login error:', err);
-      return false;
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
     }
+  }, [user, token]);
+
+  const login = async ({ email, password }) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      toast.error('Invalid credentials');
+      throw new Error('Invalid credentials');
+    }
+
+    const data = await res.json();
+    setUser(data.user);
+    setToken(data.token);
+    toast.success('Login successful!');
+
+    if (data.user.role === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  const register = async ({ first_name, last_name, email, password }) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_name, last_name, email, password }),
+    });
+
+    if (!res.ok) {
+      toast.error('Registration failed');
+      throw new Error('Registration failed');
+    }
+
+    const data = await res.json();
+    setUser(data.user);
+    setToken(data.token);
+    toast.success('Registration successful!');
+    navigate('/dashboard');
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('token');
+    setToken('');
     localStorage.removeItem('user');
-    navigate('/login');
+    localStorage.removeItem('token');
+    toast.info('Logged out');
+    navigate('/login', { replace: true });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

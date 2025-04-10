@@ -16,6 +16,13 @@
     "dotenv": "^16.4.5",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.33.2"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.6.0",
+    "bcrypt": "^5.1.1",
+    "framer-motion": "^12.6.3",
+    "react-router-dom": "^7.5.0",
+    "react-toastify": "^11.0.5",
+    "recharts": "^2.15.2"
   }
 }
-
