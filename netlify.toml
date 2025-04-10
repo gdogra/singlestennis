@@ -1,19 +1,20 @@
 [build]
-base = "frontend"
-publish = "dist"
-command = "npm run build"
+  base = "frontend"
+  command = "npm run build"
+  publish = "frontend/dist"
 
 [build.environment]
-NODE_VERSION = "18"
+  NODE_VERSION = "18"
+  VITE_API_BASE_URL = "https://singlestennis-production.up.railway.app/api"
 
 [[redirects]]
-from = "/api/*"
-to = "https://tennisconnect-backend.railway.app/:splat"
-status = 200
-force = true
+  from = "/api/*"
+  to = "https://singlestennis-production.up.railway.app/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
