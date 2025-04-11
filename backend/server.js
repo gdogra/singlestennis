@@ -8,7 +8,7 @@ import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
 import matchesRoutes from './routes/matches.js';
 import adminRoutes from './routes/admin.js';
-import debugRoutes from './routes/debug.js'; // <-- new debug route
+import debugRoutes from './routes/debug.js';
 
 // Load environment variables
 dotenv.config({
@@ -18,8 +18,18 @@ dotenv.config({
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// CORS Configuration
+const allowedOrigins = [
+  'https://singlestennis.netlify.app',
+  'http://localhost:5173'
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -28,7 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/matches', matchesRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/debug', debugRoutes); // <-- route now registered
+app.use('/api/debug', debugRoutes);
 
 // Health check route
 app.get('/api', (req, res) => {
