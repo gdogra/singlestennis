@@ -2,14 +2,12 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
-const pool = new Pool({
-  user: 'postgres',
-  password: 'pos_brthe_O2', // force as string
-  host: 'localhost',
-  port: 5432,
-  database: 'postgres',
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-});
+const isProduction = process.env.NODE_ENV === 'production';
 
-export { pool };
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: isProduction
+    ? { rejectUnauthorized: false }
+    : false,
+});
 
