@@ -1,6 +1,6 @@
 [build]
   base = "frontend"
-  publish = "frontend/dist"
+  publish = "dist"
   command = "npm run build"
 
   [build.environment]
@@ -8,7 +8,7 @@
     VITE_API_BASE_URL = "https://singlestennis-production.up.railway.app/api"
 
 [functions]
-  directory = "frontend/netlify/functions"
+  directory = "netlify/functions"
 
 [[redirects]]
   from = "/api/*"
