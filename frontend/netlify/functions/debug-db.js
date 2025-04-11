@@ -1,26 +1,27 @@
 // frontend/netlify/functions/debug-db.js
-const { Pool } = require('pg');
+import { Client } from 'pg';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-});
+export default async (req, res) => {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
 
-exports.handler = async function () {
   try {
-    const result = await pool.query('SELECT NOW()');
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Connected to database',
-        time: result.rows[0].now,
-      }),
-    };
+    await client.connect();
+    const result = await client.query('SELECT NOW()');
+    await client.end();
+
+    return res.status(200).json({
+      status: 'ok',
+      time: result.rows[0].now,
+    });
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Database connection failed', details: err.message }),
-    };
+    console.error('[Netlify Debug] DB connection error:', err);
+    return res.status(500).json({
+      error: 'Database connection failed',
+      detail: err.message,
+    });
   }
 };
 
