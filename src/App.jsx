@@ -1,65 +1,29 @@
-import { useState, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
-import Layout from '@/components/Layout'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import Login from '@/pages/Login'
-import Register from '@/pages/Register'
-import Players from '@/pages/Players'
-import Challenges from '@/pages/Challenges'
-import Calendar from '@/pages/Calendar'
-import Leaderboard from '@/pages/Leaderboard'
-import MatchHistory from '@/pages/MatchHistory'
-import Profile from '@/pages/Profile'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import PlayerRankings from './pages/PlayerRankings';
+import NotFound from './pages/NotFound';
 
-// Placeholder components
-const Home = () => <div className="p-4">Welcome to SingleTennis</div>
-const NotFound = () => <div className="p-4">Page Not Found</div>
+const Home = () => (
+  <div className="p-6 text-center">
+    <h1 className="text-3xl font-bold mb-4">Welcome to SingleTennis</h1>
+    <p className="text-gray-600">Use the navigation to explore the app.</p>
+  </div>
+);
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="players" element={
-            <ProtectedRoute>
-              <Players />
-            </ProtectedRoute>
-          } />
-          <Route path="challenges" element={
-            <ProtectedRoute>
-              <Challenges />
-            </ProtectedRoute>
-          } />
-          <Route path="calendar" element={
-            <ProtectedRoute>
-              <Calendar />
-            </ProtectedRoute>
-          } />
-          <Route path="leaderboard" element={
-            <ProtectedRoute>
-              <Leaderboard />
-            </ProtectedRoute>
-          } />
-          <Route path="history" element={
-            <ProtectedRoute>
-              <MatchHistory />
-            </ProtectedRoute>
-          } />
-          <Route path="profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
+    <Router>
+      <AnimatePresence mode="wait">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/leaderboard" element={<PlayerRankings />} />
           <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </AuthProvider>
-  )
+        </Routes>
+      </AnimatePresence>
+    </Router>
+  );
 }
 
-export default App
+export default App;
+
