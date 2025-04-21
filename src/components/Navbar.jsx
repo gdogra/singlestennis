@@ -1,38 +1,16 @@
+// src/components/Navbar.jsx
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function Navbar() {
-  const location = useLocation();
-
-  const navItems = [
-    { name: 'Leaderboard', path: '/leaderboard' },
-    { name: 'Profile', path: '/profile' },
-    { name: 'Challenges', path: '/challenges' },
-    { name: 'Calendar', path: '/calendar' }
-  ];
-
   return (
-    <nav className="bg-gray-800 text-white">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-lg font-bold">
-          SingleTennis
-        </Link>
-        <ul className="flex gap-4">
-          {navItems.map(({ name, path }) => (
-            <li key={path}>
-              <Link
-                to={path}
-                className={`hover:underline ${
-                  location.pathname === path ? 'underline font-semibold' : ''
-                }`}
-              >
-                {name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <nav className="fixed top-0 left-0 right-0 bg-white shadow p-4 flex justify-between items-center z-10">
+      <Link to="/" className="text-xl font-bold">SingleTennis</Link>
+      <ul className="flex space-x-4">
+        <li><Link to="/leaderboard">Leaderboard</Link></li>
+        <li><Link to="/profile">Profile</Link></li>
+        <li><Link to="/challenges">Challenges</Link></li>
+        <li><Link to="/calendar">Calendar</Link></li>
+      </ul>
     </nav>
-  );
 }
-
