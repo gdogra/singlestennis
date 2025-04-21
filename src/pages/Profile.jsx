@@ -1,4 +1,3 @@
-// src/pages/Profile.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -15,14 +14,14 @@ export default function ProfilePage() {
     async function loadData() {
       try {
         // Get current user
-        const { data: userData, error: userErr } = await supabase.auth.getUser();
+        const { data: { user }, error: userErr } = await supabase.auth.getUser();
         if (userErr) throw userErr;
-        const profileId = id || userData.user.id;
+        const profileId = id || user.id;
 
-        // Fetch profile
+        // Fetch profile (dropped non-existent fields)
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url, location, skill_level')
+          .select('id, name, avatar_url, skill_level')
           .eq('id', profileId)
           .single();
         if (profErr) throw profErr;
@@ -56,21 +55,16 @@ export default function ProfilePage() {
         <img
           src={
             profile.avatar_url ||
-            `https://via.placeholder.com/150?text=${profile.name[0]}`
+            `https://via.placeholder.com/150?text=${encodeURIComponent(profile.name[0])}`
           }
           alt={`${profile.name}'s avatar`}
-          className="w-32 h-32 rounded-full border-4 border-blue-500"
+          className="w-32 h-32 rounded-full border-4 border-blue-500 object-cover"
         />
         <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
           <h1 className="text-3xl font-bold">{profile.name}</h1>
-          {profile.location && <p className="text-gray-600">{profile.location}</p>}
-          {profile.bio ? (
-            <p className="mt-2">{profile.bio}</p>
-          ) : (
-            <p className="mt-2 italic text-gray-500">No bio available.</p>
-          )}
+          <p className="mt-2 italic text-gray-500">Skill Level: {profile.skill_level}</p>
           <button
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
             onClick={() => setModalOpen(true)}
           >
             Challenge {profile.name}
