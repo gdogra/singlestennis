@@ -1,4 +1,5 @@
 // File: src/pages/Profile.jsx
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -14,6 +15,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadData() {
       try {
+        // fetch current user
         const {
           data: { user },
           error: userErr,
@@ -21,7 +23,7 @@ export default function ProfilePage() {
         if (userErr) throw userErr;
         const profileId = id || user.id;
 
-        // Fetch profile
+        // only valid fields
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, skill_level')
@@ -30,7 +32,7 @@ export default function ProfilePage() {
         if (profErr) throw profErr;
         setProfile(profData);
 
-        // Fetch matches with correct columns
+        // correct match columns
         const { data: matchData, error: matchErr } = await supabase
           .from('matches')
           .select('id, player1_id, player2_id, winner_id, played_at')
@@ -58,17 +60,21 @@ export default function ProfilePage() {
         <img
           src={
             profile.avatar_url ||
-            `https://via.placeholder.com/150?text=${encodeURIComponent(profile.name[0])}`
+            `https://via.placeholder.com/150?text=${encodeURIComponent(
+              profile.name[0]
+            )}`
           }
           alt={`${profile.name}'s avatar`}
           className="w-32 h-32 rounded-full border-4 border-blue-500 object-cover"
         />
         <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
           <h1 className="text-3xl font-bold">{profile.name}</h1>
-          <p className="mt-2 italic text-gray-500">Skill Level: {profile.skill_level}</p>
+          <p className="mt-2 italic text-gray-600">
+            Skill Level: <span className="font-semibold">{profile.skill_level}</span>
+          </p>
           <button
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
             onClick={() => setModalOpen(true)}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
           >
             Challenge {profile.name}
           </button>
@@ -93,8 +99,8 @@ export default function ProfilePage() {
         <ul className="mt-4 space-y-2">
           {matches.map((m) => (
             <li key={m.id} className="p-4 bg-gray-50 rounded-lg">
-              {new Date(m.played_at).toLocaleDateString()} —
-              Player1 ID: {m.player1_id}, Player2 ID: {m.player2_id} (
+              {new Date(m.played_at).toLocaleDateString()} —{' '}
+              Player1: {m.player1_id}, Player2: {m.player2_id} (
               {m.winner_id === profile.id ? 'Won' : 'Lost'})
             </li>
           ))}
@@ -109,61 +115,6 @@ export default function ProfilePage() {
         receiverId={profile.id}
         onChallengeSent={() => toast.success('Challenge sent!')}
       />
-    </div>
-  );
-}
-
-
-// File: src/pages/PlayerRankings.jsx
-import React, { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
-import { supabase } from '../supabaseClient';
-import StatsChart from '../components/StatsChart';
-
-export default function PlayerRankings() {
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadPlayers() {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, name, avatar_url, skill_level');
-        if (error) throw error;
-        setPlayers(data || []);
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to load player rankings.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadPlayers();
-  }, []);
-
-  if (loading) return <div className="p-6">Loading leaderboard…</div>;
-
-  return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Leaderboard</h1>
-      <div className="space-y-8">
-        {players.map((p) => (
-          <div key={p.id} className="flex flex-col items-center">
-            <img
-              src={
-                p.avatar_url ||
-                `https://via.placeholder.com/100?text=${encodeURIComponent(p.name[0])}`
-              }
-              alt={`${p.name}'s avatar`}
-              className="w-24 h-24 rounded-full border-2 border-gray-300 object-cover"
-            />
-            <h2 className="mt-2 text-xl font-semibold">{p.name}</h2>
-            <p className="text-gray-600">Skill Level: {p.skill_level}</p>
-            <StatsChart playerId={p.id} />
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

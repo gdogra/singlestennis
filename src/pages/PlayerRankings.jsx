@@ -12,7 +12,7 @@ export default function PlayerRankings() {
   useEffect(() => {
     async function loadPlayers() {
       try {
-        // Fetch only the fields that actually exist
+        // only valid fields here
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, skill_level');
@@ -39,14 +39,15 @@ export default function PlayerRankings() {
             <img
               src={
                 p.avatar_url ||
-                `https://via.placeholder.com/100?text=${encodeURIComponent(p.name[0])}`
+                `https://via.placeholder.com/100?text=${encodeURIComponent(
+                  p.name[0]
+                )}`
               }
               alt={`${p.name}'s avatar`}
               className="w-24 h-24 rounded-full border-2 border-gray-300 object-cover"
             />
             <h2 className="mt-2 text-xl font-semibold">{p.name}</h2>
             <p className="text-gray-600">Skill Level: {p.skill_level}</p>
-            {/* You can replace StatsChart with your actual chart component */}
             <StatsChart playerId={p.id} />
           </div>
         ))}
