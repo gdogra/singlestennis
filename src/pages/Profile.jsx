@@ -22,7 +22,7 @@ export default function ProfilePage() {
         // Fetch profile
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url, bio, location, skill_level')
+          .select('id, name, avatar_url, location, skill_level')
           .eq('id', profileId)
           .single();
         if (profErr) throw profErr;
