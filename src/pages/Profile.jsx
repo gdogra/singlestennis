@@ -1,42 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { supabase } from '../supabaseClient';
-import ChallengeModal from '../components/ChallengeModal';
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import { supabase } from '../supabaseClient'
+import ChallengeModal from '../components/ChallengeModal'
 
 export default function ProfilePage() {
-  const { id } = useParams();
-  const [profile, setProfile] = useState(null);
-  const [matches, setMatches] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  const { id } = useParams()
+  const nav = useNavigate()
+  const [profile, setProfile] = useState(null)
+  const [matches, setMatches] = useState([])
+  const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
     async function loadData() {
       try {
-        // If there's no :id param, grab the current session's user
-        let profileId = id;
+        // 1) try to get an authenticated user
+        const {
+          data: { session },
+          error: sessErr
+        } = await supabase.auth.getSession()
+        if (sessErr) throw sessErr
+
+        const userId = session?.user?.id
+
+        // 2) decide whose profile to load
+        const profileId = id || userId
         if (!profileId) {
-          const {
-            data: { session },
-            error: sessionErr,
-          } = await supabase.auth.getSession();
-          if (sessionErr || !session) {
-            toast.error('You must be signed in to view your profile.');
-            return;
-          }
-          profileId = session.user.id;
+          // no session AND no :id in URL => redirect home
+          nav('/')
+          return
         }
 
-        // 1) Fetch the profile
+        // 3) fetch the profile
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, skill_level')
           .eq('id', profileId)
-          .single();
-        if (profErr) throw profErr;
-        setProfile(profData);
+          .single()
+        if (profErr) throw profErr
+        setProfile(profData)
 
-        // 2) Fetch matches, pulling in player names via foreign‐key joins
+        // 4) fetch matches
         const { data: matchData, error: matchErr } = await supabase
           .from('matches')
           .select(`
@@ -47,25 +51,27 @@ export default function ProfilePage() {
             player2:player2_id ( name )
           `)
           .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
-          .order('played_at', { ascending: false });
-        if (matchErr) throw matchErr;
-        setMatches(matchData || []);
+          .order('played_at', { ascending: false })
+        if (matchErr) throw matchErr
+        setMatches(matchData)
       } catch (err) {
-        console.error(err);
-        toast.error('Failed to load profile or matches.');
+        console.error(err)
+        toast.error('Failed to load profile or matches.')
       }
     }
-    loadData();
-  }, [id]);
 
-  if (!profile) return <div className="p-6">Loading profile…</div>;
+    loadData()
+  }, [id, nav])
 
-  const wins = matches.filter((m) => m.winner_id === profile.id).length;
-  const losses = matches.length - wins;
+  if (!profile) {
+    return <div className="p-6">Loading profile…</div>
+  }
+
+  const wins = matches.filter(m => m.winner_id === profile.id).length
+  const losses = matches.length - wins
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row items-center">
         <img
           src={
@@ -91,7 +97,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="mt-8 grid grid-cols-2 gap-4 text-center">
         <div className="p-4 bg-gray-100 rounded-lg">
           <h2 className="text-xl font-semibold">Wins</h2>
@@ -103,11 +108,10 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Recent Matches */}
       <h2 className="mt-8 text-2xl font-semibold">Recent Matches</h2>
       {matches.length ? (
         <ul className="mt-4 space-y-2">
-          {matches.slice(0, 5).map((m) => (
+          {matches.slice(0, 5).map(m => (
             <li key={m.id} className="p-4 bg-gray-50 rounded-lg">
               <span>{new Date(m.played_at).toLocaleDateString()}</span> —{' '}
               {m.player1.name} vs {m.player2.name} (
@@ -126,6 +130,6 @@ export default function ProfilePage() {
         onChallengeSent={() => toast.success('Challenge sent!')}
       />
     </div>
-  );
+  )
 }
 
