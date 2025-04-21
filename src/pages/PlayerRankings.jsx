@@ -15,7 +15,6 @@ export default function PlayerRankings() {
           .select('id, name, avatar_url, skill_level')
           .order('skill_level', { ascending: false })
           .limit(10);
-
         if (error) throw error;
         setPlayers(data);
       } catch (err) {
@@ -28,7 +27,7 @@ export default function PlayerRankings() {
     loadPlayers();
   }, []);
 
-  if (loading) return <div className="p-6">Loading leaderboards…</div>;
+  if (loading) return <div className="p-6">Loading leaderboard…</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-6">
