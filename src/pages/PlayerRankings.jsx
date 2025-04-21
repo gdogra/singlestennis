@@ -1,7 +1,9 @@
-// src/pages/PlayerRankings.jsx
+// File: src/pages/PlayerRankings.jsx
+
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { supabase } from '../supabaseClient';
+import StatsChart from '../components/StatsChart';
 
 export default function PlayerRankings() {
   const [players, setPlayers] = useState([]);
@@ -10,15 +12,15 @@ export default function PlayerRankings() {
   useEffect(() => {
     async function loadPlayers() {
       try {
+        // Fetch only the fields that actually exist
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url, skill_level')
-          .order('skill_level', { ascending: false });
+          .select('id, name, avatar_url, skill_level');
         if (error) throw error;
-        setPlayers(data);
+        setPlayers(data || []);
       } catch (err) {
         console.error(err);
-        toast.error('Failed to load leaderboard.');
+        toast.error('Failed to load player rankings.');
       } finally {
         setLoading(false);
       }
@@ -29,26 +31,23 @@ export default function PlayerRankings() {
   if (loading) return <div className="p-6">Loading leaderboard…</div>;
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Leaderboard</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold">Leaderboard</h1>
+      <div className="space-y-8">
         {players.map((p) => (
-          <div
-            key={p.id}
-            className="bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center"
-          >
+          <div key={p.id} className="flex flex-col items-center">
             <img
               src={
                 p.avatar_url ||
                 `https://via.placeholder.com/100?text=${encodeURIComponent(p.name[0])}`
               }
               alt={`${p.name}'s avatar`}
-              className="w-24 h-24 rounded-full object-cover border-2 border-blue-400 mb-4"
+              className="w-24 h-24 rounded-full border-2 border-gray-300 object-cover"
             />
-            <h2 className="text-xl font-semibold mb-1">{p.name}</h2>
-            <p className="text-gray-600">
-              Skill Level: <span className="font-medium">{p.skill_level}</span>
-            </p>
+            <h2 className="mt-2 text-xl font-semibold">{p.name}</h2>
+            <p className="text-gray-600">Skill Level: {p.skill_level}</p>
+            {/* You can replace StatsChart with your actual chart component */}
+            <StatsChart playerId={p.id} />
           </div>
         ))}
       </div>
