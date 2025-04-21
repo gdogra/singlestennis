@@ -1,53 +1,42 @@
-// scripts/seed-matches.js
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import { v4 as uuidv4 } from 'uuid';
+import { supabase } from './_client.mjs';
 
-dotenv.config();
+const matches = [
+  {
+    player1: 'demo-1',
+    player2: 'demo-2',
+    winner: 'demo-1',
+    score: '6-4, 6-2',
+    date: '2024-03-10',
+  },
+  {
+    player1: 'demo-3',
+    player2: 'demo-4',
+    winner: 'demo-4',
+    score: '4-6, 6-3, 7-5',
+    date: '2024-03-12',
+  },
+  {
+    player1: 'demo-5',
+    player2: 'demo-6',
+    winner: 'demo-6',
+    score: '7-6, 6-4',
+    date: '2024-03-15',
+  },
+];
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+for (const match of matches) {
+  const { error } = await supabase.from('matches').insert({
+    player1_id: match.player1,
+    player2_id: match.player2,
+    winner_id: match.winner,
+    score: match.score,
+    played_at: match.date,
+  });
 
-const seedMatches = async () => {
-  const { data: profiles, error } = await supabase.from('profiles').select('id, name');
-  if (error) throw new Error(`❌ Error fetching profiles: ${error.message}`);
-
-  const profileMap = Object.fromEntries(profiles.map(p => [p.name, p.id]));
-
-  const matches = [
-    {
-      winner_id: profileMap['Test User'],
-      loser_id: profileMap['Alice'],
-      court: 'Court 1',
-      score: '6-4, 6-3',
-      status: 'completed'
-    },
-    {
-      winner_id: profileMap['Bob'],
-      loser_id: profileMap['Test User'],
-      court: 'Court 2',
-      score: '7-5, 3-6, 6-4',
-      status: 'completed'
-    },
-    {
-      winner_id: profileMap['Test User'],
-      loser_id: profileMap['Carol'],
-      court: 'Court 3',
-      score: '6-3, 6-1',
-      status: 'completed'
-    }
-  ];
-
-  for (const match of matches) {
-    const { error } = await supabase.from('matches').insert({ id: uuidv4(), ...match });
-    if (error) console.error(`❌ Failed to insert match:`, error.message);
-    else console.log(`✅ Match inserted: ${match.court}`);
+  if (error) {
+    console.error(`❌ Failed to insert match:`, error.message);
+  } else {
+    console.log(`✅ Match inserted: ${match.player1} vs ${match.player2}`);
   }
-
-  console.log('🎾 Done seeding matches');
-};
-
-seedMatches();
+}
 
