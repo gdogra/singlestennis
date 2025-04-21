@@ -1,3 +1,4 @@
+// src/pages/Profile.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -14,11 +15,14 @@ export default function ProfilePage() {
     async function loadData() {
       try {
         // Get current user
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
         if (userErr) throw userErr;
         const profileId = id || user.id;
 
-        // Fetch profile (dropped non-existent fields)
+        // Fetch profile (only existing fields)
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, skill_level')
