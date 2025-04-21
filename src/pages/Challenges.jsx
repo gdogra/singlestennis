@@ -12,19 +12,25 @@ export default function ChallengesPage() {
   useEffect(() => {
     async function loadChallenges() {
       try {
-        const user = supabase.auth.user();
-        const { data: recData, error: recError } = await supabase
+        const {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+
+        const { data: recData, error: recErr } = await supabase
           .from('challenges')
           .select('*')
           .eq('receiver_id', user.id);
-        const { data: sentData, error: sentError } = await supabase
+        const { data: sentData, error: sentErr } = await supabase
           .from('challenges')
           .select('*')
           .eq('sender_id', user.id);
-        if (recError || sentError) throw recError || sentError;
+        if (recErr || sentErr) throw recErr || sentErr;
+
         setChallenges([
-          ...recData.map(c => ({ ...c, type: 'Received' })),
-          ...sentData.map(c => ({ ...c, type: 'Sent' })),
+          ...recData.map((c) => ({ ...c, type: 'Received' })),
+          ...sentData.map((c) => ({ ...c, type: 'Sent' })),
         ]);
       } catch (err) {
         console.error(err);
@@ -43,11 +49,13 @@ export default function ChallengesPage() {
       <h1 className="text-3xl font-bold">Challenges</h1>
       {challenges.length ? (
         <ul className="space-y-2">
-          {challenges.map(ch => (
+          {challenges.map((ch) => (
             <li key={ch.id} className="p-4 bg-white shadow rounded-lg">
               <p className="font-semibold">{ch.type} Challenge</p>
               <p>Message: {ch.message}</p>
-              {ch.scheduled_for && <p>Scheduled for: {new Date(ch.scheduled_for).toLocaleDateString()}</p>}
+              {ch.scheduled_for && (
+                <p>Scheduled for: {new Date(ch.scheduled_for).toLocaleDateString()}</p>
+              )}
             </li>
           ))}
         </ul>
@@ -69,3 +77,4 @@ export default function ChallengesPage() {
     </div>
   );
 }
+

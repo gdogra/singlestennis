@@ -11,14 +11,21 @@ export default function CalendarPage() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const user = supabase.auth.user();
-        const { data, error } = await supabase
+        const {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+
+        const { data, error: evtErr } = await supabase
           .from('challenges')
           .select('id, scheduled_for, message')
           .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-        if (error) throw error;
-        const formatted = data.map(e => ({ id: e.id, title: e.message || 'Challenge', date: e.scheduled_for }));
-        setEvents(formatted);
+        if (evtErr) throw evtErr;
+
+        setEvents(
+          data.map((e) => ({ id: e.id, title: e.message || 'Challenge', date: e.scheduled_for }))
+        );
       } catch (err) {
         console.error(err);
         toast.error('Failed to load calendar events.');
@@ -38,3 +45,4 @@ export default function CalendarPage() {
     </div>
   );
 }
+
