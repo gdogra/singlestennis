@@ -4,7 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import Home from './pages/Home';
-import ProfilePage from './pages/ProfilePage';
+import Profile from './pages/Profile';
 import PlayerRankings from './pages/PlayerRankings';
 import Dashboard from './pages/Dashboard';
 
@@ -13,8 +13,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/profile/:id" element={<ProfilePage />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:id" element={<Profile />} />
         <Route path="/leaderboard" element={<PlayerRankings />} />
         <Route path="/dashboard" element={<Dashboard />} />
         {/* add other routes as needed */}
