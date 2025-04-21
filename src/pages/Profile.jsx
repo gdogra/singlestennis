@@ -1,4 +1,4 @@
-// File: src/pages/Profile.jsx
+// src/pages/Profile.jsx
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -23,7 +23,7 @@ export default function ProfilePage() {
         if (userErr) throw userErr;
         const profileId = id || user.id;
 
-        // only valid fields
+        // only valid profile fields
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, skill_level')
@@ -32,7 +32,7 @@ export default function ProfilePage() {
         if (profErr) throw profErr;
         setProfile(profData);
 
-        // correct match columns
+        // select only the ID columns that exist
         const { data: matchData, error: matchErr } = await supabase
           .from('matches')
           .select('id, player1_id, player2_id, winner_id, played_at')
@@ -60,9 +60,7 @@ export default function ProfilePage() {
         <img
           src={
             profile.avatar_url ||
-            `https://via.placeholder.com/150?text=${encodeURIComponent(
-              profile.name[0]
-            )}`
+            `https://via.placeholder.com/150?text=${encodeURIComponent(profile.name[0])}`
           }
           alt={`${profile.name}'s avatar`}
           className="w-32 h-32 rounded-full border-4 border-blue-500 object-cover"
@@ -100,7 +98,7 @@ export default function ProfilePage() {
           {matches.map((m) => (
             <li key={m.id} className="p-4 bg-gray-50 rounded-lg">
               {new Date(m.played_at).toLocaleDateString()} —{' '}
-              Player1: {m.player1_id}, Player2: {m.player2_id} (
+              Player1 ID: {m.player1_id}, Player2 ID: {m.player2_id} (
               {m.winner_id === profile.id ? 'Won' : 'Lost'})
             </li>
           ))}
