@@ -1,5 +1,3 @@
-// File: src/pages/PlayerRankings.jsx
-
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { supabase } from '../supabaseClient';
@@ -12,12 +10,14 @@ export default function PlayerRankings() {
   useEffect(() => {
     async function loadPlayers() {
       try {
-        // only valid fields here
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, name, avatar_url, skill_level');
+          .select('id, name, avatar_url, skill_level')
+          .order('skill_level', { ascending: false })
+          .limit(10);
+
         if (error) throw error;
-        setPlayers(data || []);
+        setPlayers(data);
       } catch (err) {
         console.error(err);
         toast.error('Failed to load player rankings.');
@@ -28,30 +28,32 @@ export default function PlayerRankings() {
     loadPlayers();
   }, []);
 
-  if (loading) return <div className="p-6">Loading leaderboard…</div>;
+  if (loading) return <div className="p-6">Loading leaderboards…</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Leaderboard</h1>
-      <div className="space-y-8">
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-6">
+      <h1 className="text-4xl font-bold mb-6">Leaderboard</h1>
+      <ul className="space-y-6">
         {players.map((p) => (
-          <div key={p.id} className="flex flex-col items-center">
+          <li key={p.id} className="flex items-center space-x-4">
             <img
               src={
                 p.avatar_url ||
-                `https://via.placeholder.com/100?text=${encodeURIComponent(
-                  p.name[0]
-                )}`
+                `https://via.placeholder.com/64?text=${p.name[0]}`
               }
               alt={`${p.name}'s avatar`}
-              className="w-24 h-24 rounded-full border-2 border-gray-300 object-cover"
+              className="w-16 h-16 rounded-full object-cover"
             />
-            <h2 className="mt-2 text-xl font-semibold">{p.name}</h2>
-            <p className="text-gray-600">Skill Level: {p.skill_level}</p>
-            <StatsChart playerId={p.id} />
-          </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-semibold">{p.name}</h2>
+              <p className="text-gray-500">Skill Level: {p.skill_level}</p>
+            </div>
+            <div className="w-48">
+              <StatsChart skillLevel={p.skill_level} />
+            </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

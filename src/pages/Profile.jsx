@@ -1,5 +1,3 @@
-// src/pages/Profile.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -15,7 +13,6 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // fetch current user
         const {
           data: { user },
           error: userErr,
@@ -23,7 +20,7 @@ export default function ProfilePage() {
         if (userErr) throw userErr;
         const profileId = id || user.id;
 
-        // only valid profile fields
+        // 1) Fetch the profile
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, skill_level')
@@ -32,14 +29,21 @@ export default function ProfilePage() {
         if (profErr) throw profErr;
         setProfile(profData);
 
-        // select only the ID columns that exist
+        // 2) Fetch matches with joined profile names
         const { data: matchData, error: matchErr } = await supabase
           .from('matches')
-          .select('id, player1_id, player2_id, winner_id, played_at')
+          .select(`
+            id,
+            played_at,
+            winner_id,
+            player1:player1_id ( name ),
+            player2:player2_id ( name )
+          `)
           .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
           .order('played_at', { ascending: false });
         if (matchErr) throw matchErr;
-        setMatches(matchData || []);
+        setMatches(matchData);
+
       } catch (err) {
         console.error(err);
         toast.error('Failed to load profile or matches.');
@@ -60,19 +64,21 @@ export default function ProfilePage() {
         <img
           src={
             profile.avatar_url ||
-            `https://via.placeholder.com/150?text=${encodeURIComponent(profile.name[0])}`
+            `https://via.placeholder.com/150?text=${encodeURIComponent(
+              profile.name[0]
+            )}`
           }
           alt={`${profile.name}'s avatar`}
           className="w-32 h-32 rounded-full border-4 border-blue-500 object-cover"
         />
         <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
           <h1 className="text-3xl font-bold">{profile.name}</h1>
-          <p className="mt-2 italic text-gray-600">
-            Skill Level: <span className="font-semibold">{profile.skill_level}</span>
+          <p className="mt-2 italic text-gray-500">
+            Skill Level: {profile.skill_level}
           </p>
           <button
-            onClick={() => setModalOpen(true)}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
+            onClick={() => setModalOpen(true)}
           >
             Challenge {profile.name}
           </button>
@@ -95,10 +101,10 @@ export default function ProfilePage() {
       <h2 className="mt-8 text-2xl font-semibold">Recent Matches</h2>
       {matches.length ? (
         <ul className="mt-4 space-y-2">
-          {matches.map((m) => (
+          {matches.slice(0, 5).map((m) => (
             <li key={m.id} className="p-4 bg-gray-50 rounded-lg">
-              {new Date(m.played_at).toLocaleDateString()} —{' '}
-              Player1 ID: {m.player1_id}, Player2 ID: {m.player2_id} (
+              <span>{new Date(m.played_at).toLocaleDateString()}</span> —{' '}
+              {m.player1.name} vs {m.player2.name} (
               {m.winner_id === profile.id ? 'Won' : 'Lost'})
             </li>
           ))}
