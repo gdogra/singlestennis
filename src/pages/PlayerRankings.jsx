@@ -41,6 +41,7 @@ export default function PlayerRankings() {
       transition={{ duration: 0.4 }}
     >
       <h1 className="text-2xl font-bold mb-4">Leaderboard</h1>
+
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
@@ -57,11 +58,11 @@ export default function PlayerRankings() {
           <tbody>
             {players.map((player, i) => {
               const name = player.full_name ?? 'Unnamed';
-              const name = player.full_name?.replace(/^[A-Z]/, '') ?? 'Unnamed';
-		const initials =
+              const initials =
                 typeof name === 'string' && name.length > 0
                   ? name.charAt(0).toUpperCase()
                   : '?';
+
               return (
                 <motion.tr
                   key={player.id}

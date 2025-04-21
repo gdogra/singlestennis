@@ -1,26 +1,40 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import SharedLayout from '../layouts/SharedLayout';
-import PlayerRankings from './pages/PlayerRankings';
-import Challenges from './pages/Challenges';
-import Calendar from './pages/Calendar';
-import Profile from './pages/Profile';
-import NotFound from './pages/NotFound';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-export default function App() {
+import Home from './pages/Home';
+import ProfilePage from './pages/ProfilePage';
+import PlayerRankings from './pages/PlayerRankings';
+import Dashboard from './pages/Dashboard';
+
+function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<SharedLayout />}>
-          <Route index element={<PlayerRankings />} />
-          <Route path="leaderboard" element={<PlayerRankings />} />
-          <Route path="challenges" element={<Challenges />} />
-          <Route path="calendar" element={<Calendar />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
+        <Route path="/" element={<Home />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
+        <Route path="/leaderboard" element={<PlayerRankings />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        {/* add other routes as needed */}
       </Routes>
+
+      {/* Toast notifications container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </Router>
   );
 }
+
+export default App;
 

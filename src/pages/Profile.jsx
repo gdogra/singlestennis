@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import { motion } from 'framer-motion';
+import ChallengeModal from '../components/ChallengeModal';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -10,92 +11,112 @@ const supabase = createClient(
 
 export default function Profile() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: sessionData, error }) => {
-      if (error || !sessionData?.session?.user) {
-        navigate('/login');
-      } else {
-        setUser(sessionData.session.user);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
     const fetchProfile = async () => {
-      try {
-        const profileId = id || user.id;
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', profileId)
-          .single();
-        if (error) throw error;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setIsOwnProfile(!id || id === user.id);
+
+      const profileId = id || user.id;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', profileId)
+        .single();
+
+      if (error) {
+        console.error('Error loading profile:', error.message);
+      } else {
         setProfile(data);
-      } catch (err) {
-        console.error(err);
-        setError('Profile not found.');
       }
     };
-    fetchProfile();
-  }, [user, id]);
 
-  useEffect(() => {
-    if (!profile) return;
-    const fetchMatches = async () => {
+    const fetchMatchHistory = async () => {
       const { data, error } = await supabase
         .from('matches')
         .select('*')
-        .or(`player1_id.eq.${profile.id},player2_id.eq.${profile.id}`)
+        .or(`player1_id.eq.${id},player2_id.eq.${id}`)
         .order('played_at', { ascending: false });
+
       if (!error) setMatches(data);
     };
-    fetchMatches();
-  }, [profile]);
 
-  if (!user || loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-600">{error}</div>;
+    fetchProfile();
+    if (id) fetchMatchHistory();
+  }, [id]);
 
-  const wins = matches.filter(m => m.winner_id === profile.id).length;
-  const losses = matches.length - wins;
+  if (!profile) return <p className="p-4">Loading profile...</p>;
+
+  const initials = profile.name?.charAt(0).toUpperCase() || '?';
+  const avatarUrl = profile.avatar_url;
 
   return (
     <motion.div
-      className="p-6 max-w-2xl mx-auto"
-      initial={{ opacity: 0, y: 16 }}
+      className="p-6 max-w-3xl mx-auto"
+      initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.4 }}
     >
-      <h1 className="text-2xl font-bold mb-4">Player Profile</h1>
-      <div className="bg-white shadow-md rounded p-4 mb-6">
-        <h2 className="text-xl font-semibold">{profile.name || 'Unnamed'}</h2>
-        <p className="text-sm text-gray-600">Skill Level: {profile.skill_level || '—'}</p>
-        <p className="text-sm text-gray-600">Email: {profile.email}</p>
-        <div className="mt-3 text-sm">
-          <span className="mr-6">🏆 Wins: <strong>{wins}</strong></span>
-          <span>❌ Losses: <strong>{losses}</strong></span>
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <div className="flex items-center gap-4">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt="avatar"
+              className="w-16 h-16 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-16 h-16 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
+              {initials}
+            </div>
+          )}
+          <div>
+            <h2 className="text-xl font-semibold">{profile.name}</h2>
+            <p className="text-sm text-gray-600">{profile.location || 'No location set'}</p>
+            <p className="text-sm text-gray-600 italic">{profile.bio || 'No bio available.'}</p>
+          </div>
         </div>
+
+        {!isOwnProfile && (
+          <div className="mt-4">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowChallengeModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Challenge Player
+            </motion.button>
+          </div>
+        )}
       </div>
 
-      <h3 className="text-lg font-semibold mb-2">Match History</h3>
-      {matches.length === 0 ? (
-        <p className="text-gray-500 text-sm">No matches yet.</p>
-      ) : (
-        <ul className="space-y-2 text-sm">
-          {matches.map(match => (
-            <li key={match.id} className="border p-2 rounded">
-              {new Date(match.played_at).toLocaleDateString()} —{' '}
-              {match.winner_id === profile.id ? '✅ Won' : '❌ Lost'}
-            </li>
-          ))}
-        </ul>
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold mb-2">Recent Matches</h3>
+        {matches.length === 0 ? (
+          <p className="text-gray-500">No match history yet.</p>
+        ) : (
+          <ul className="divide-y">
+            {matches.map((m) => (
+              <li key={m.id} className="py-2">
+                Match on {new Date(m.played_at).toLocaleDateString()} — Score: {m.score}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {showChallengeModal && (
+        <ChallengeModal
+          targetId={profile.id}
+          onClose={() => setShowChallengeModal(false)}
+        />
       )}
     </motion.div>
   );
