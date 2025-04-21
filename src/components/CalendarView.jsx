@@ -11,4 +11,4 @@ export default function CalendarView({ events }) {
     </div>
   );
 }
-EOF
+
