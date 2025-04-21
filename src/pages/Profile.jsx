@@ -1,4 +1,4 @@
-// src/pages/Profile.jsx
+// File: src/pages/Profile.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -14,7 +14,6 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Get current user
         const {
           data: { user },
           error: userErr,
@@ -22,7 +21,7 @@ export default function ProfilePage() {
         if (userErr) throw userErr;
         const profileId = id || user.id;
 
-        // Fetch profile (only existing fields)
+        // Fetch profile
         const { data: profData, error: profErr } = await supabase
           .from('profiles')
           .select('id, name, avatar_url, skill_level')
@@ -31,10 +30,10 @@ export default function ProfilePage() {
         if (profErr) throw profErr;
         setProfile(profData);
 
-        // Fetch matches
+        // Fetch matches with correct columns
         const { data: matchData, error: matchErr } = await supabase
           .from('matches')
-          .select('id, player1_name, player2_name, winner_id, played_at')
+          .select('id, player1_id, player2_id, winner_id, played_at')
           .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
           .order('played_at', { ascending: false });
         if (matchErr) throw matchErr;
@@ -92,10 +91,10 @@ export default function ProfilePage() {
       <h2 className="mt-8 text-2xl font-semibold">Recent Matches</h2>
       {matches.length ? (
         <ul className="mt-4 space-y-2">
-          {matches.slice(0, 5).map((m) => (
+          {matches.map((m) => (
             <li key={m.id} className="p-4 bg-gray-50 rounded-lg">
-              <span>{new Date(m.played_at).toLocaleDateString()}</span> —{' '}
-              {m.player1_name} vs {m.player2_name} (
+              {new Date(m.played_at).toLocaleDateString()} —
+              Player1 ID: {m.player1_id}, Player2 ID: {m.player2_id} (
               {m.winner_id === profile.id ? 'Won' : 'Lost'})
             </li>
           ))}
@@ -110,6 +109,61 @@ export default function ProfilePage() {
         receiverId={profile.id}
         onChallengeSent={() => toast.success('Challenge sent!')}
       />
+    </div>
+  );
+}
+
+
+// File: src/pages/PlayerRankings.jsx
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { supabase } from '../supabaseClient';
+import StatsChart from '../components/StatsChart';
+
+export default function PlayerRankings() {
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPlayers() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url, skill_level');
+        if (error) throw error;
+        setPlayers(data || []);
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to load player rankings.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPlayers();
+  }, []);
+
+  if (loading) return <div className="p-6">Loading leaderboard…</div>;
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold">Leaderboard</h1>
+      <div className="space-y-8">
+        {players.map((p) => (
+          <div key={p.id} className="flex flex-col items-center">
+            <img
+              src={
+                p.avatar_url ||
+                `https://via.placeholder.com/100?text=${encodeURIComponent(p.name[0])}`
+              }
+              alt={`${p.name}'s avatar`}
+              className="w-24 h-24 rounded-full border-2 border-gray-300 object-cover"
+            />
+            <h2 className="mt-2 text-xl font-semibold">{p.name}</h2>
+            <p className="text-gray-600">Skill Level: {p.skill_level}</p>
+            <StatsChart playerId={p.id} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
