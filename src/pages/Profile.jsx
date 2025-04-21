@@ -1,124 +1,102 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
-import { motion } from 'framer-motion';
 import ChallengeModal from '../components/ChallengeModal';
+import { toast } from 'react-toastify';
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
-
-export default function Profile() {
+export default function ProfilePage() {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [matches, setMatches] = useState([]);
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
-  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      setIsOwnProfile(!id || id === user.id);
-
-      const profileId = id || user.id;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', profileId)
-        .single();
-
-      if (error) {
-        console.error('Error loading profile:', error.message);
-      } else {
+    async function loadProfile() {
+      try {
+        const res = await fetch(`/api/profiles/${id || ''}`);
+        const data = await res.json();
         setProfile(data);
+      } catch (err) {
+        toast.error('Failed to load profile.');
       }
-    };
-
-    const fetchMatchHistory = async () => {
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .or(`player1_id.eq.${id},player2_id.eq.${id}`)
-        .order('played_at', { ascending: false });
-
-      if (!error) setMatches(data);
-    };
-
-    fetchProfile();
-    if (id) fetchMatchHistory();
+    }
+    async function loadMatches() {
+      try {
+        const res = await fetch(`/api/matches?player=${id || 'me'}`);
+        const data = await res.json();
+        setMatches(data);
+      } catch (err) {
+        toast.error('Failed to load matches.');
+      }
+    }
+    loadProfile();
+    loadMatches();
   }, [id]);
 
-  if (!profile) return <p className="p-4">Loading profile...</p>;
+  if (!profile) return <div className="p-6">Loading profile…</div>;
 
-  const initials = profile.name?.charAt(0).toUpperCase() || '?';
-  const avatarUrl = profile.avatar_url;
+  const wins = matches.filter(m => m.winner_id === profile.id).length;
+  const losses = matches.length - wins;
 
   return (
-    <motion.div
-      className="p-6 max-w-3xl mx-auto"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <div className="flex items-center gap-4">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="avatar"
-              className="w-16 h-16 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-16 h-16 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
-              {initials}
-            </div>
-          )}
-          <div>
-            <h2 className="text-xl font-semibold">{profile.name}</h2>
-            <p className="text-sm text-gray-600">{profile.location || 'No location set'}</p>
-            <p className="text-sm text-gray-600 italic">{profile.bio || 'No bio available.'}</p>
-          </div>
-        </div>
-
-        {!isOwnProfile && (
-          <div className="mt-4">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowChallengeModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Challenge Player
-            </motion.button>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <h3 className="text-lg font-semibold mb-2">Recent Matches</h3>
-        {matches.length === 0 ? (
-          <p className="text-gray-500">No match history yet.</p>
-        ) : (
-          <ul className="divide-y">
-            {matches.map((m) => (
-              <li key={m.id} className="py-2">
-                Match on {new Date(m.played_at).toLocaleDateString()} — Score: {m.score}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {showChallengeModal && (
-        <ChallengeModal
-          targetId={profile.id}
-          onClose={() => setShowChallengeModal(false)}
+    <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-6">
+      <div className="flex flex-col md:flex-row items-center md:items-start">
+        <img
+          src={profile.avatar_url || `https://via.placeholder.com/150?text=${profile.name[0]}`}
+          alt={`${profile.name}'s avatar`}
+          className="w-32 h-32 rounded-full object-cover border-4 border-blue-500"
         />
+        <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
+          <h1 className="text-3xl font-bold">{profile.name}</h1>
+          {profile.location && <p className="mt-1 text-gray-600">{profile.location}</p>}
+          {profile.bio ? (
+            <p className="mt-2">{profile.bio}</p>
+          ) : (
+            <p className="mt-2 italic text-gray-500">No bio available.</p>
+          )}
+          <button
+            onClick={() => setModalOpen(true)}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
+          >
+            Challenge {profile.name}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mt-8 grid grid-cols-2 gap-4 text-center">
+        <div className="p-4 bg-gray-100 rounded-lg">
+          <h2 className="text-xl font-semibold">Wins</h2>
+          <p className="text-2xl">{wins}</p>
+        </div>
+        <div className="p-4 bg-gray-100 rounded-lg">
+          <h2 className="text-xl font-semibold">Losses</h2>
+          <p className="text-2xl">{losses}</p>
+        </div>
+      </div>
+
+      {/* Recent Matches */}
+      <h2 className="mt-8 text-2xl font-semibold">Recent Matches</h2>
+      {matches.length ? (
+        <ul className="mt-4 space-y-2">
+          {matches.slice(0, 5).map(m => (
+            <li key={m.id} className="p-4 bg-gray-50 rounded-lg shadow">
+              <span>{new Date(m.played_at).toLocaleDateString()}</span> —{' '}
+              {m.player1_name} vs {m.player2_name} (
+              {m.winner_id === profile.id ? 'Won' : 'Lost'})
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 italic text-gray-500">No match history yet.</p>
       )}
-    </motion.div>
+
+      <ChallengeModal
+        isOpen={modalOpen}
+        onRequestClose={() => setModalOpen(false)}
+        receiverId={profile.id}
+        onChallengeSent={() => toast.success('Challenge sent!')}
+      />
+    </div>
   );
 }
 
