@@ -1,18 +1,50 @@
-// src/components/Navbar.jsx
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 
-export default function Navbar() {
+export default function NavBar() {
+  const [session, setSession] = useState(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => setSession(session)
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-white shadow p-4 flex justify-between items-center z-10">
-      <Link to="/" className="text-xl font-bold">SingleTennis</Link>
-      <ul className="flex space-x-4">
-        <li><Link to="/leaderboard">Leaderboard</Link></li>
-        <li><Link to="/profile">Profile</Link></li>
-        <li><Link to="/challenges">Challenges</Link></li>
-        <li><Link to="/calendar">Calendar</Link></li>
-      </ul>
-    </nav>
-  );
+    <header className="bg-white shadow p-4">
+      <nav className="container mx-auto flex items-center justify-between">
+        <div className="space-x-4">
+          <Link to="/" className="font-bold text-lg">SingleTennis</Link>
+          <Link to="/leaderboard">Leaderboard</Link>
+          <Link to="/profile">Profile</Link>
+          <Link to="/challenges">Challenges</Link>
+          <Link to="/calendar">Calendar</Link>
+        </div>
+        <div>
+          {!session ? (
+            <Link to="/login">
+              <button className="px-4 py-1 bg-blue-500 text-white rounded">
+                Login
+              </button>
+            </Link>
+          ) : (
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="px-4 py-1 bg-gray-200 rounded"
+            >
+              Logout
+            </button>
+          )}
+        </div>
+      </nav>
+    </header>
+  )
 }
 
