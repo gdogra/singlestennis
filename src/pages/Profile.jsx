@@ -1,7 +1,9 @@
+// src/pages/Profile.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import ChallengeModal from '../components/ChallengeModal';
 import { toast } from 'react-toastify';
+import { supabase } from '../supabaseClient';
+import ChallengeModal from '../components/ChallengeModal';
 
 export default function ProfilePage() {
   const { id } = useParams();
@@ -10,52 +12,66 @@ export default function ProfilePage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    async function loadProfile() {
+    async function loadData() {
       try {
-        const res = await fetch(`/api/profiles/${id || ''}`);
-        const data = await res.json();
-        setProfile(data);
+        // Get current user
+        const { data: userData, error: userErr } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+        const profileId = id || userData.user.id;
+
+        // Fetch profile
+        const { data: profData, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url, bio, location, skill_level')
+          .eq('id', profileId)
+          .single();
+        if (profErr) throw profErr;
+        setProfile(profData);
+
+        // Fetch matches
+        const { data: matchData, error: matchErr } = await supabase
+          .from('matches')
+          .select('id, player1_name, player2_name, winner_id, played_at')
+          .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
+          .order('played_at', { ascending: false });
+        if (matchErr) throw matchErr;
+        setMatches(matchData || []);
       } catch (err) {
-        toast.error('Failed to load profile.');
+        console.error(err);
+        toast.error('Failed to load profile or matches.');
       }
     }
-    async function loadMatches() {
-      try {
-        const res = await fetch(`/api/matches?player=${id || 'me'}`);
-        const data = await res.json();
-        setMatches(data);
-      } catch (err) {
-        toast.error('Failed to load matches.');
-      }
-    }
-    loadProfile();
-    loadMatches();
+    loadData();
   }, [id]);
 
   if (!profile) return <div className="p-6">Loading profile…</div>;
 
-  const wins = matches.filter(m => m.winner_id === profile.id).length;
+  const wins = matches.filter((m) => m.winner_id === profile.id).length;
   const losses = matches.length - wins;
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-6">
-      <div className="flex flex-col md:flex-row items-center md:items-start">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-center">
         <img
-          src={profile.avatar_url || `https://via.placeholder.com/150?text=${profile.name[0]}`}
+          src={
+            profile.avatar_url ||
+            `https://via.placeholder.com/150?text=${profile.name[0]}`
+          }
           alt={`${profile.name}'s avatar`}
-          className="w-32 h-32 rounded-full object-cover border-4 border-blue-500"
+          className="w-32 h-32 rounded-full border-4 border-blue-500"
         />
         <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
           <h1 className="text-3xl font-bold">{profile.name}</h1>
-          {profile.location && <p className="mt-1 text-gray-600">{profile.location}</p>}
+          {profile.location && <p className="text-gray-600">{profile.location}</p>}
           {profile.bio ? (
             <p className="mt-2">{profile.bio}</p>
           ) : (
             <p className="mt-2 italic text-gray-500">No bio available.</p>
           )}
           <button
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
             onClick={() => setModalOpen(true)}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
           >
             Challenge {profile.name}
           </button>
@@ -78,8 +94,8 @@ export default function ProfilePage() {
       <h2 className="mt-8 text-2xl font-semibold">Recent Matches</h2>
       {matches.length ? (
         <ul className="mt-4 space-y-2">
-          {matches.slice(0, 5).map(m => (
-            <li key={m.id} className="p-4 bg-gray-50 rounded-lg shadow">
+          {matches.slice(0, 5).map((m) => (
+            <li key={m.id} className="p-4 bg-gray-50 rounded-lg">
               <span>{new Date(m.played_at).toLocaleDateString()}</span> —{' '}
               {m.player1_name} vs {m.player2_name} (
               {m.winner_id === profile.id ? 'Won' : 'Lost'})
