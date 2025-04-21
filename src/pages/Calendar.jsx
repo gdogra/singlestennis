@@ -1,3 +1,4 @@
+// src/pages/Calendar.jsx
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { supabase } from '../supabaseClient';
@@ -10,27 +11,21 @@ export default function CalendarPage() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        // Get the current user
-        const {
-          data: { user },
-          error: userErr,
-        } = await supabase.auth.getUser();
+        const { data: { user }, error: userErr } = await supabase.auth.getUser();
         if (userErr) throw userErr;
 
-        // Fetch all challenges (no scheduled_for column)
+        // Only select id and message (no scheduled_for)
         const { data, error } = await supabase
           .from('challenges')
           .select('id, message')
           .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
         if (error) throw error;
 
-        // Map to placeholder events (no date until schema is updated)
-        const formatted = data.map((e) => ({
+        setEvents(data.map(e => ({
           id: e.id,
           title: e.message || 'Challenge',
-          date: null,
-        }));
-        setEvents(formatted);
+          date: null,      // no date column yet
+        })));
       } catch (err) {
         console.error(err);
         toast.error('Failed to load calendar events.');
