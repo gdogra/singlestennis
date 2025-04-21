@@ -1,82 +1,83 @@
-import 'dotenv/config';
+#!/usr/bin/env node
+
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Match order with Supabase Auth demo users
 const demoProfiles = [
   {
-    name: 'Serena Williams',
+    email: 'alice@example.com',
+    name: 'Alice',
+    full_name: 'Alice Wonderland',
     skill_level: 5,
-    email: 'serena@example.com',
-    avatar_url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Serena',
   },
   {
-    name: 'Roger Federer',
-    skill_level: 5,
-    email: 'roger@example.com',
-    avatar_url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Roger',
-  },
-  {
-    name: 'Naomi Osaka',
+    email: 'bob@example.com',
+    name: 'Bob',
+    full_name: 'Bob Builder',
     skill_level: 4,
-    email: 'naomi@example.com',
-    avatar_url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Naomi',
   },
   {
-    name: 'Novak Djokovic',
-    skill_level: 5,
-    email: 'novak@example.com',
-    avatar_url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Novak',
-  },
-  {
-    name: 'Coco Gauff',
+    email: 'carol@example.com',
+    name: 'Carol',
+    full_name: 'Carol Danvers',
     skill_level: 3,
-    email: 'coco@example.com',
-    avatar_url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Coco',
   },
   {
-    name: 'Carlos Alcaraz',
+    email: 'dave@example.com',
+    name: 'Dave',
+    full_name: 'Dave Grohl',
+    skill_level: 5,
+  },
+  {
+    email: 'test@example.com',
+    name: 'Test',
+    full_name: 'Test User',
+    skill_level: 3,
+  },
+  {
+    email: 'admin@example.com',
+    name: 'Admin',
+    full_name: 'Admin User',
     skill_level: 4,
-    email: 'carlos@example.com',
-    avatar_url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Carlos',
   },
 ];
 
-async function main() {
-  const { data: users, error } = await supabase.auth.admin.listUsers();
-  if (error) {
-    console.error('❌ Failed to list users:', error.message);
-    process.exit(1);
+console.log('\n🎾 Inserting demo profiles...');
+
+for (const profile of demoProfiles) {
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', profile.email)
+    .single();
+
+  if (userError || !user) {
+    console.error(`❌ User not found for ${profile.email}`);
+    continue;
   }
 
-  const inserts = demoProfiles.map((profile, i) => {
-    const user = users.users[i];
-    if (!user) {
-      console.error(`⚠️ No auth user for ${profile.name}`);
-      return null;
-    }
-
-    return {
+  const { error: upsertError } = await supabase
+    .from('profiles')
+    .upsert({
       id: user.id,
       name: profile.name,
-      email: profile.email,
+      full_name: profile.full_name,
       skill_level: profile.skill_level,
-      avatar_url: profile.avatar_url,
-      created_at: new Date().toISOString(),
-    };
-  }).filter(Boolean);
+    });
 
-  const { error: upsertError } = await supabase.from('profiles').upsert(inserts);
   if (upsertError) {
-    console.error('❌ Failed to upsert profiles:', upsertError.message);
+    console.error(`❌ Failed to upsert ${profile.name}`, upsertError.message);
   } else {
-    console.log('✅ Demo profiles seeded successfully.');
+    console.log(`✅ Upserted profile for ${profile.name}`);
   }
 }
 
-main();
+console.log('🎾 Done inserting demo profiles!');
 

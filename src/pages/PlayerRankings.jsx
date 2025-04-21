@@ -57,7 +57,8 @@ export default function PlayerRankings() {
           <tbody>
             {players.map((player, i) => {
               const name = player.full_name ?? 'Unnamed';
-              const initials =
+              const name = player.full_name?.replace(/^[A-Z]/, '') ?? 'Unnamed';
+		const initials =
                 typeof name === 'string' && name.length > 0
                   ? name.charAt(0).toUpperCase()
                   : '?';
