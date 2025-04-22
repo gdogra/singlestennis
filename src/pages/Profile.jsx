@@ -1,102 +1,97 @@
 // src/pages/Profile.jsx
-import React, { useEffect, useState } from 'react'
-import { useSession } from '../contexts/AuthContext'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../supabaseClient'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import Avatar from '../components/Avatar'
+import toast from 'react-hot-toast'
 
 export default function Profile() {
-  const { user } = useSession()
-  const navigate = useNavigate()
+  const { user } = useAuth()
   const [profile, setProfile] = useState(null)
-  const [wins, setWins] = useState(0)
-  const [losses, setLosses] = useState(0)
-  const [editing, setEditing] = useState(false)
-  const [formData, setFormData] = useState({ name: '', bio: '', avatar_url: '', email: '' })
+  const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
-    if (!user) navigate('/login')
-  }, [user, navigate])
-
-  useEffect(() => {
-    if (!user?.id) return
+    if (!user) return
     const fetchProfile = async () => {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      if (error) console.error(error)
-      else {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (error) {
+        toast.error('Failed to load profile')
+      } else {
         setProfile(data)
-        setFormData({
-          name: data.name || '',
-          bio: data.bio || '',
-          avatar_url: data.avatar_url || '',
-          email: user.email || '',
-        })
       }
+      setLoading(false)
     }
-
-    const fetchStats = async () => {
-      const { data: matches } = await supabase.from('matches').select('*').or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
-      const wins = matches.filter((m) => m.winner_id === user.id).length
-      const losses = matches.filter((m) => m.winner_id && m.winner_id !== user.id).length
-      setWins(wins)
-      setLosses(losses)
-    }
-
     fetchProfile()
-    fetchStats()
   }, [user])
 
-  const handleEdit = () => setEditing(true)
+  const handleUpdate = async (field, value) => {
+    setUpdating(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ [field]: value })
+      .eq('id', user.id)
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
-
-  const handleSave = async () => {
-    const updates = {
-      name: formData.name,
-      bio: formData.bio,
-      avatar_url: formData.avatar_url,
-    }
-    const { error } = await supabase.from('profiles').update(updates).eq('id', user.id)
     if (error) {
-      console.error(error)
-      toast.error('Failed to update profile')
+      toast.error('Update failed')
     } else {
-      setProfile((prev) => ({ ...prev, ...updates }))
-      setEditing(false)
       toast.success('Profile updated!')
+      setProfile({ ...profile, [field]: value })
     }
+    setUpdating(false)
   }
 
-  if (!profile) return <p className="p-4">Loading…</p>
+  if (loading) return <p>Loading...</p>
+  if (!profile) return <p>Profile not found</p>
 
   return (
-    <div className="max-w-xl mx-auto p-6">
+    <div className="p-4 max-w-xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">Your Profile</h1>
-
-      <img
-        src={formData.avatar_url || 'https://via.placeholder.com/150'}
-        alt="Avatar"
-        className="rounded-full w-32 h-32 object-cover mb-4"
+      <Avatar
+        url={profile.avatar_url}
+        onUpload={(url) => handleUpdate('avatar_url', url)}
+        size={100}
       />
+      <div className="mt-4 space-y-2">
+        <Editable label="Name" value={profile.name} onSave={(val) => handleUpdate('name', val)} />
+        <p><strong>Email:</strong> {user.email}</p>
+        <Editable label="Bio" value={profile.bio || ''} onSave={(val) => handleUpdate('bio', val)} />
+        <p><strong>Wins:</strong> {profile.wins ?? 0}</p>
+        <p><strong>Losses:</strong> {profile.losses ?? 0}</p>
+      </div>
+    </div>
+  )
+}
 
+function Editable({ label, value, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+
+  const save = () => {
+    onSave(draft)
+    setEditing(false)
+  }
+
+  return (
+    <div>
+      <strong>{label}:</strong>{' '}
       {editing ? (
-        <div className="space-y-2">
-          <input name="name" value={formData.name} onChange={handleChange} placeholder="Name" className="border p-2 w-full" />
-          <input name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="border p-2 w-full" />
-          <input name="bio" value={formData.bio} onChange={handleChange} placeholder="Bio" className="border p-2 w-full" />
-          <input name="avatar_url" value={formData.avatar_url} onChange={handleChange} placeholder="Avatar URL" className="border p-2 w-full" />
-          <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded">Save</button>
-        </div>
+        <>
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            className="border px-2 py-1"
+          />
+          <button onClick={save} className="ml-2 text-blue-600">Save</button>
+        </>
       ) : (
-        <div className="space-y-1">
-          <p><strong>Name:</strong> {profile.name}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Wins:</strong> {wins}</p>
-          <p><strong>Losses:</strong> {losses}</p>
-          <p><strong>Bio:</strong> {profile.bio || 'No bio yet.'}</p>
-          <button onClick={handleEdit} className="mt-3 px-4 py-2 bg-blue-600 text-white rounded">Edit</button>
-        </div>
+        <span onClick={() => setEditing(true)} className="cursor-pointer text-gray-800">{value || 'Click to edit'}</span>
       )}
     </div>
   )

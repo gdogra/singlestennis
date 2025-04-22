@@ -1,62 +1,128 @@
-// src/pages/Leaderboard.jsx
-import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import React, { useEffect, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import Avatar from '../components/Avatar'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
-
-export default function Leaderboard() {
-  const [players, setPlayers] = useState([])
+export default function Profile() {
+  const { user, session, supabase } = useAuth()
+  const [profile, setProfile] = useState(null)
+  const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    if (!session) {
+      navigate('/login')
+      return
+    }
+
+    const fetchProfile = async () => {
+      setLoading(true)
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, avatar_url, wins, losses')
-        .order('wins', { ascending: false })
+        .select('*')
+        .eq('id', user.id)
+        .single()
 
       if (error) {
-        console.error('Error fetching leaderboard:', error)
+        console.error('Error fetching profile:', error.message)
+        toast.error('Failed to load profile')
       } else {
-        setPlayers(data)
+        setProfile(data)
       }
+
       setLoading(false)
     }
 
-    fetchLeaderboard()
-  }, [])
+    fetchProfile()
+  }, [session, supabase, user, navigate])
 
-  if (loading) return <div className="p-4">Loading leaderboard...</div>
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name: profile.name,
+        bio: profile.bio,
+        avatar_url: profile.avatar_url,
+      })
+      .eq('id', profile.id)
+
+    if (error) {
+      console.error('Save error:', error.message)
+      toast.error('Failed to save profile')
+    } else {
+      toast.success('Profile updated')
+      setEditing(false)
+    }
+  }
+
+  const handleAvatarUpload = (url) => {
+    setProfile((prev) => ({ ...prev, avatar_url: url }))
+    toast.success('Avatar updated!')
+  }
+
+  if (loading) return <p>Loading profile…</p>
+  if (!profile) return <p>No profile data found.</p>
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Leaderboard</h1>
-      <ul className="space-y-4">
-        {players.map((player, index) => (
-          <li
-            key={player.id}
-            className="flex items-center justify-between bg-white shadow rounded p-4"
+    <div className="p-6 max-w-xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
+
+      <Avatar
+        url={profile.avatar_url}
+        size={120}
+        onUpload={handleAvatarUpload}
+      />
+
+      <div className="mt-6 space-y-4">
+        <div>
+          <label className="block font-semibold">Name:</label>
+          <input
+            type="text"
+            value={profile.name || ''}
+            onChange={(e) =>
+              setProfile((prev) => ({ ...prev, name: e.target.value }))
+            }
+            className="border rounded px-3 py-2 w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block font-semibold">Email:</label>
+          <input
+            type="email"
+            value={user.email}
+            disabled
+            className="border rounded px-3 py-2 w-full bg-gray-100"
+          />
+        </div>
+
+        <div>
+          <label className="block font-semibold">Bio:</label>
+          <textarea
+            value={profile.bio || ''}
+            onChange={(e) =>
+              setProfile((prev) => ({ ...prev, bio: e.target.value }))
+            }
+            className="border rounded px-3 py-2 w-full"
+          />
+        </div>
+
+        <div className="flex justify-between items-center">
+          <div>
+            <strong>Wins:</strong> {profile.wins || 0}
+            {' · '}
+            <strong>Losses:</strong> {profile.losses || 0}
+          </div>
+          <button
+            onClick={handleSave}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            <div className="flex items-center gap-4">
-              <span className="font-bold text-lg w-6 text-gray-500">{index + 1}</span>
-              <img
-                src={player.avatar_url || '/default-avatar.png'}
-                alt={player.name}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-              <div>
-                <p className="font-medium">{player.name}</p>
-                <p className="text-sm text-gray-500">
-                  Wins: {player.wins ?? 0} | Losses: {player.losses ?? 0}
-                </p>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+            Save Changes
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
