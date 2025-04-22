@@ -1,50 +1,31 @@
-import React, { useState, useEffect } from 'react'
+// src/components/Navbar.jsx
 import { Link } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
+import { useAuth } from '../contexts/AuthContext'
 
-export default function NavBar() {
-  const [session, setSession] = useState(null)
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => setSession(session)
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
+export default function Navbar() {
+  const { user, signOut } = useAuth()
 
   return (
-    <header className="bg-white shadow p-4">
-      <nav className="container mx-auto flex items-center justify-between">
-        <div className="space-x-4">
-          <Link to="/" className="font-bold text-lg">SingleTennis</Link>
-          <Link to="/leaderboard">Leaderboard</Link>
-          <Link to="/profile">Profile</Link>
-          <Link to="/challenges">Challenges</Link>
-          <Link to="/calendar">Calendar</Link>
-        </div>
-        <div>
-          {!session ? (
-            <Link to="/login">
-              <button className="px-4 py-1 bg-blue-500 text-white rounded">
-                Login
-              </button>
-            </Link>
-          ) : (
-            <button
-              onClick={() => supabase.auth.signOut()}
-              className="px-4 py-1 bg-gray-200 rounded"
-            >
-              Logout
-            </button>
-          )}
-        </div>
-      </nav>
-    </header>
+    <nav className="flex items-center justify-between px-6 py-4 bg-gray-100 border-b">
+      <div className="font-bold text-xl">
+        <Link to="/">SingleTennis</Link>
+      </div>
+      <div className="space-x-4">
+        <Link to="/leaderboard">Leaderboard</Link>
+        <Link to="/profile">Profile</Link>
+        <Link to="/challenges">Challenges</Link>
+        <Link to="/calendar">Calendar</Link>
+        {user ? (
+          <button onClick={signOut} className="ml-4 text-red-600 font-medium">
+            Logout
+          </button>
+        ) : (
+          <Link to="/login" className="ml-4 font-medium">
+            Login
+          </Link>
+        )}
+      </div>
+    </nav>
   )
 }
 

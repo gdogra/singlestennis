@@ -1,14 +1,14 @@
-import React from 'react';
+import React from 'react'
 
-/**
- * Placeholder for a calendar view component.
- * Replace with your calendar library (e.g. react-big-calendar, FullCalendar) implementation.
- */
-export default function CalendarView({ events }) {
+export default function CalendarView() {
   return (
-    <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-      <p className="text-gray-400">[CalendarView placeholder]</p>
+    <div className="w-full h-80 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+      <img
+        src="https://via.placeholder.com/600x400?text=Calendar+Coming+Soon"
+        alt="Calendar placeholder"
+        className="object-cover"
+      />
     </div>
-  );
+  )
 }
 

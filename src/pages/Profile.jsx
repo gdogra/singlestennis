@@ -1,134 +1,103 @@
+// src/pages/Profile.jsx
 import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { useSession } from '../contexts/AuthContext'
 import { supabase } from '../supabaseClient'
-import ChallengeModal from '../components/ChallengeModal'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
-export default function ProfilePage() {
-  const { id } = useParams()
-  const nav = useNavigate()
+export default function Profile() {
+  const { user } = useSession()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
-  const [matches, setMatches] = useState([])
-  const [modalOpen, setModalOpen] = useState(false)
+  const [wins, setWins] = useState(0)
+  const [losses, setLosses] = useState(0)
+  const [editing, setEditing] = useState(false)
+  const [formData, setFormData] = useState({ name: '', bio: '', avatar_url: '', email: '' })
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        // 1) try to get an authenticated user
-        const {
-          data: { session },
-          error: sessErr
-        } = await supabase.auth.getSession()
-        if (sessErr) throw sessErr
+    if (!user) navigate('/login')
+  }, [user, navigate])
 
-        const userId = session?.user?.id
-
-        // 2) decide whose profile to load
-        const profileId = id || userId
-        if (!profileId) {
-          // no session AND no :id in URL => redirect home
-          nav('/')
-          return
-        }
-
-        // 3) fetch the profile
-        const { data: profData, error: profErr } = await supabase
-          .from('profiles')
-          .select('id, name, avatar_url, skill_level')
-          .eq('id', profileId)
-          .single()
-        if (profErr) throw profErr
-        setProfile(profData)
-
-        // 4) fetch matches
-        const { data: matchData, error: matchErr } = await supabase
-          .from('matches')
-          .select(`
-            id,
-            played_at,
-            winner_id,
-            player1:player1_id ( name ),
-            player2:player2_id ( name )
-          `)
-          .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
-          .order('played_at', { ascending: false })
-        if (matchErr) throw matchErr
-        setMatches(matchData)
-      } catch (err) {
-        console.error(err)
-        toast.error('Failed to load profile or matches.')
+  useEffect(() => {
+    if (!user?.id) return
+    const fetchProfile = async () => {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      if (error) console.error(error)
+      else {
+        setProfile(data)
+        setFormData({
+          name: data.name || '',
+          bio: data.bio || '',
+          avatar_url: data.avatar_url || '',
+          email: user.email || '',
+        })
       }
     }
 
-    loadData()
-  }, [id, nav])
+    const fetchStats = async () => {
+      const { data: matches } = await supabase.from('matches').select('*').or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
+      const wins = matches.filter((m) => m.winner_id === user.id).length
+      const losses = matches.filter((m) => m.winner_id && m.winner_id !== user.id).length
+      setWins(wins)
+      setLosses(losses)
+    }
 
-  if (!profile) {
-    return <div className="p-6">Loading profile…</div>
+    fetchProfile()
+    fetchStats()
+  }, [user])
+
+  const handleEdit = () => setEditing(true)
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
+
+  const handleSave = async () => {
+    const updates = {
+      name: formData.name,
+      bio: formData.bio,
+      avatar_url: formData.avatar_url,
+    }
+    const { error } = await supabase.from('profiles').update(updates).eq('id', user.id)
+    if (error) {
+      console.error(error)
+      toast.error('Failed to update profile')
+    } else {
+      setProfile((prev) => ({ ...prev, ...updates }))
+      setEditing(false)
+      toast.success('Profile updated!')
+    }
   }
 
-  const wins = matches.filter(m => m.winner_id === profile.id).length
-  const losses = matches.length - wins
+  if (!profile) return <p className="p-4">Loading…</p>
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-6">
-      <div className="flex flex-col md:flex-row items-center">
-        <img
-          src={
-            profile.avatar_url ||
-            `https://via.placeholder.com/150?text=${encodeURIComponent(
-              profile.name[0]
-            )}`
-          }
-          alt={`${profile.name}'s avatar`}
-          className="w-32 h-32 rounded-full border-4 border-blue-500 object-cover"
-        />
-        <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
-          <h1 className="text-3xl font-bold">{profile.name}</h1>
-          <p className="mt-2 italic text-gray-500">
-            Skill Level: {profile.skill_level}
-          </p>
-          <button
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
-            onClick={() => setModalOpen(true)}
-          >
-            Challenge {profile.name}
-          </button>
-        </div>
-      </div>
+    <div className="max-w-xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-4">Your Profile</h1>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 text-center">
-        <div className="p-4 bg-gray-100 rounded-lg">
-          <h2 className="text-xl font-semibold">Wins</h2>
-          <p className="text-2xl">{wins}</p>
-        </div>
-        <div className="p-4 bg-gray-100 rounded-lg">
-          <h2 className="text-xl font-semibold">Losses</h2>
-          <p className="text-2xl">{losses}</p>
-        </div>
-      </div>
-
-      <h2 className="mt-8 text-2xl font-semibold">Recent Matches</h2>
-      {matches.length ? (
-        <ul className="mt-4 space-y-2">
-          {matches.slice(0, 5).map(m => (
-            <li key={m.id} className="p-4 bg-gray-50 rounded-lg">
-              <span>{new Date(m.played_at).toLocaleDateString()}</span> —{' '}
-              {m.player1.name} vs {m.player2.name} (
-              {m.winner_id === profile.id ? 'Won' : 'Lost'})
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-2 italic text-gray-500">No match history yet.</p>
-      )}
-
-      <ChallengeModal
-        isOpen={modalOpen}
-        onRequestClose={() => setModalOpen(false)}
-        receiverId={profile.id}
-        onChallengeSent={() => toast.success('Challenge sent!')}
+      <img
+        src={formData.avatar_url || 'https://via.placeholder.com/150'}
+        alt="Avatar"
+        className="rounded-full w-32 h-32 object-cover mb-4"
       />
+
+      {editing ? (
+        <div className="space-y-2">
+          <input name="name" value={formData.name} onChange={handleChange} placeholder="Name" className="border p-2 w-full" />
+          <input name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="border p-2 w-full" />
+          <input name="bio" value={formData.bio} onChange={handleChange} placeholder="Bio" className="border p-2 w-full" />
+          <input name="avatar_url" value={formData.avatar_url} onChange={handleChange} placeholder="Avatar URL" className="border p-2 w-full" />
+          <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded">Save</button>
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <p><strong>Name:</strong> {profile.name}</p>
+          <p><strong>Email:</strong> {user.email}</p>
+          <p><strong>Wins:</strong> {wins}</p>
+          <p><strong>Losses:</strong> {losses}</p>
+          <p><strong>Bio:</strong> {profile.bio || 'No bio yet.'}</p>
+          <button onClick={handleEdit} className="mt-3 px-4 py-2 bg-blue-600 text-white rounded">Edit</button>
+        </div>
+      )}
     </div>
   )
 }

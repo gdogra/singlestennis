@@ -1,48 +1,61 @@
-#!/usr/bin/env node
+import 'dotenv/config'
+import { createClient } from '@supabase/supabase-js'
 
-import { execSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+const DEMO_USERS = [
+  { email: 'demo@domain.com', name: 'Gautam Dogra' },
+  { email: 'serena@singlestennis.com', name: 'Serena Williams' },
+  { email: 'rafa@singlestennis.com', name: 'Rafael Nadal' },
+  { email: 'iga@singlestennis.com', name: 'Iga Swiatek' },
+]
 
-const steps = [
-  {
-    name: 'Upsert users from auth',
-    script: 'upsert-users-from-auth.mjs',
-  },
-  {
-    name: 'Insert demo profiles',
-    script: 'seed-demo-profiles.mjs',
-  },
-  {
-    name: 'Seed matches',
-    script: 'seed-matches.js',
-  },
-  {
-    name: 'Seed challenges',
-    script: 'seed-challenges.js',
-  },
-  {
-    name: 'Seed avatars',
-    script: 'seed-avatars.js',
-  },
-];
+async function seedDemoUsers() {
+  console.log('⏳ Seeding demo users...')
 
-const runScript = (label, file) => {
-  try {
-    console.log(`\n🔧 ${label}...`);
-    execSync(`node ${path.join(__dirname, file)}`, { stdio: 'inherit' });
-  } catch (err) {
-    console.error(`❌ Failed during ${label}:\n`, err.message);
+  for (const { email, name } of DEMO_USERS) {
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (existingUser) {
+      console.log(`✅ Already exists: ${email}`)
+      continue
+    }
+
+    const userRes = await supabase.auth.admin.createUser({
+      email,
+      password: 'secret-password',
+      email_confirm: true,
+    })
+
+    if (userRes.error) {
+      console.warn(`⚠️ Failed to create ${email}: ${userRes.error.message}`)
+      continue
+    }
+
+    const { id } = userRes.data.user
+
+    const profileRes = await supabase
+      .from('profiles')
+      .upsert(
+        { id, email, name },
+        { onConflict: 'id' }
+      )
+
+    if (profileRes.error) {
+      console.warn(`⚠️ Failed to upsert profile for ${email}: ${profileRes.error.message}`)
+    } else {
+      console.log(`✅ Created: ${email}`)
+    }
   }
-};
 
-for (const step of steps) {
-  runScript(step.name, step.script);
+  console.log('✨ Done seeding users and profiles.')
 }
 
-console.log('\n🎉 Demo seeding complete!');
+seedDemoUsers()
 

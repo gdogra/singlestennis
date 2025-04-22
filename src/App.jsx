@@ -1,28 +1,46 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import NavBar from './components/NavBar'
-import HomePage from './pages/HomePage'
-import LeaderboardPage from './pages/PlayerRankings'
-import ProfilePage from './pages/Profile'
-import ChallengesPage from './pages/Challenges'
-import CalendarPage from './pages/Calendar'
-import LoginPage from './pages/LoginPage'
-import { ToastContainer } from 'react-toastify'
+// src/App.jsx
+import { useAuth } from './contexts/AuthContext.jsx'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+
+import Navbar from './components/Navbar.jsx'
+
+import Home from './pages/Home.jsx'
+import Login from './pages/Login.jsx'
+import Profile from './pages/Profile.jsx'
+import Calendar from './pages/Calendar.jsx'
+import Challenges from './pages/Challenges.jsx'
+import Leaderboard from './pages/Leaderboard.jsx'
+import NotFound from './pages/NotFound.jsx'
 
 export default function App() {
+  const { session } = useAuth()
+
   return (
-    <>
-      <NavBar />
-      <ToastContainer />
+    <Router>
+      <Navbar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/profile/:id?" element={<ProfilePage />} />
-        <Route path="/challenges" element={<ChallengesPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/profile"
+          element={session ? <Profile user={session.user} /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/calendar"
+          element={session ? <Calendar /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/challenges"
+          element={session ? <Challenges /> : <Navigate to="/login" replace />}
+        />
+
+        {/* Catch-all */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+    </Router>
   )
 }
 
