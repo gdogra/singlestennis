@@ -1,65 +1,57 @@
-// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import StatsChart from '../components/StatsChart';
-import CalendarView from '../components/CalendarView';
+import toast from 'react-hot-toast';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(null);
-  const [challenges, setChallenges] = useState([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadStats() {
-      try {
-        const { data, error } = await supabase.rpc('get_user_match_stats');
-        if (error) throw error;
-        setStats(data);
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to load stats.');
+    if (!user) return navigate('/login');
+
+    const fetchMatches = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
+        .order('played_at', { ascending: false });
+
+      if (error) {
+        toast.error('Failed to load matches');
+        console.error('Error loading matches:', error);
+      } else {
+        setMatches(data);
       }
-    }
-    async function loadChallenges() {
-      try {
-        const { data, error } = await supabase
-          .from('challenges')
-          .select('*')
-          .eq('receiver_id', supabase.auth.user().id);
-        if (error) throw error;
-        setChallenges(data);
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to load challenges.');
-      }
-    }
-    loadStats();
-    loadChallenges();
-  }, []);
+      setLoading(false);
+    };
+
+    fetchMatches();
+  }, [user]);
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Match Stats</h2>
-          {stats ? <StatsChart data={stats} /> : <p>Loading chart…</p>}
-        </div>
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Upcoming Challenges</h2>
-          {challenges.length ? (
-            <CalendarView events={challenges} />
-          ) : (
-            <p>Loading calendar…</p>
-          )}
-        </div>
-      </div>
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-semibold mb-4">Recent Activity</h2>
-        <p className="text-gray-500">
-          (Your recent matches and challenge responses will appear here.)
-        </p>
-      </div>
+    <div className="max-w-3xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6">Welcome to your Dashboard</h1>
+      {loading ? (
+        <p className="text-gray-600">Loading match history...</p>
+      ) : matches.length === 0 ? (
+        <p className="text-gray-500">No matches found.</p>
+      ) : (
+        <ul className="space-y-4">
+          {matches.map((match) => (
+            <li key={match.id} className="border p-4 rounded shadow-sm">
+              <div className="font-medium">Played at: {new Date(match.played_at).toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Player 1: {match.player1_id}</div>
+              <div className="text-sm text-gray-600">Player 2: {match.player2_id}</div>
+              <div className="text-sm font-semibold">Winner: {match.winner_id}</div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

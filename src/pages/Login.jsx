@@ -1,63 +1,56 @@
 // src/pages/Login.jsx
-
 import { useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+)
 
 export default function Login() {
-  const [email, setEmail] = useState('test@example.com')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('demo@domain.com')
+  const [password, setPassword] = useState('secret-password')
   const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      console.error('Login error:', error.message)
       setError(error.message)
     } else {
-      console.log('✅ Login success:', data)
-      window.location.href = '/players' // or '/dashboard'
+      window.location.href = '/profile'
     }
-
-    setLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-bold text-center">Sign In</h1>
-        {error && <p className="text-red-600 text-center">{error}</p>}
+    <div className="p-4 max-w-md mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Log In</h1>
+      <form onSubmit={handleLogin} className="space-y-4">
         <input
+          className="border p-2 w-full"
           type="email"
-          className="w-full px-4 py-2 border rounded"
-          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
+          placeholder="email"
         />
         <input
+          className="border p-2 w-full"
           type="password"
-          className="w-full px-4 py-2 border rounded"
-          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
+          placeholder="password"
         />
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          {loading ? 'Logging in…' : 'Sign In'}
+          Sign In
         </button>
+        {error && <div className="text-red-600">{error}</div>}
       </form>
     </div>
   )
